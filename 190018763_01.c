@@ -48,8 +48,10 @@
 // Retorna 1 caso alguma tecla seja pressionada, 0 em caso contrário.
 int kbhit(){    
     struct termios oldt, newt;
-    int ch, oldf;tcgetattr(STDIN_FILENO,&oldt);
-    newt = oldt;newt.c_lflag &= ~(ICANON | ECHO);
+    int ch, oldf;
+    tcgetattr(STDIN_FILENO,&oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
     tcsetattr(STDIN_FILENO, TCSANOW, &newt);
     oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
     fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
@@ -86,6 +88,7 @@ int getch(void) {
 /* Variáveis Globais */
 char tabuleiro[10][17];
 int altura=9, largura = 16, velocidade=60, perdeu = 0, pontuacao = 0;
+int yfinal = 1;
 double co_angular = 0;
 char p; 
 
@@ -100,7 +103,7 @@ void exibeTabuleiro() {
 
     printf("Pontos: %d\n\n", pontuacao);
 
-    for(j = 8; j >= 0; j--) {
+    for(j = altura-1; j >= 0; j--) {
         for(i = 0; i < largura; i++) {
             if(tabuleiro[i][j] == 'A')
                 printf(RED "%c" RESET, tabuleiro[i][j]);
@@ -124,11 +127,11 @@ void preencheTabuleiro() {
     int i, j;
     for(i = 0; i < largura; i++) {
         for(j = 0; j < altura; j++) {
-            if(i == 0 || j == 0 || j == 8 || i == 15)
+            if(i == 0 || j == 0 || j == (altura-1) || i == (largura-1))
                 tabuleiro[i][j] = '#';
-            else if(j == 1 && i == 8)
+            else if(j == 1 && i == (altura-1))
                 tabuleiro[i][j] = p;
-            else
+            else if(tabuleiro[i][j] != 'A' && tabuleiro[i][j] != 'B' && tabuleiro[i][j] != 'C' && tabuleiro[i][j] != 'D' && tabuleiro[i][j] != 'E')
                 tabuleiro[i][j] = ' ';
         }
     }
@@ -138,12 +141,16 @@ void preencheTabuleiro() {
 void limpaTabuleiro() {
     int i, j;
 
-    memset(tabuleiro, ' ', sizeof(tabuleiro));
-    preencheTabuleiro();
+    for(i = 0; i < largura; i++) {
+        for(j = 0; j < altura; j++) {
+            if(tabuleiro[i][j] == '-')
+                tabuleiro[i][j] = ' ';
+        }
+    }
 }
 
 // Calcula e adiciona a mira ao tabuleiro.
-void calculaMira() {
+void calculaMira(int yfinal) { 
 
     limpaTabuleiro();
 
@@ -151,18 +158,22 @@ void calculaMira() {
     double aux;
 
     for(i = 0; i < largura; i++) {
-        for(j = 2; j < altura-1; j++) {
-            aux = co_angular*j + 8;
+        for(j = 2; j < altura-yfinal; j++) {
+            aux = co_angular*j + (largura/2);
 
             int y = (int) aux;
                 
-            // Necessário para evitar que a mira extrapole-se.
-            if(y > 0 && y < 15) {
+            /* Necessário para evitar que a mira extrapole-se. E
+            que ela sobrescreva os caracteres atirados.
+            */
+            if(y > 0 && y < (largura-1) && tabuleiro[y][j] != 'A' && tabuleiro[y][j] != 'B' && tabuleiro[y][j] != 'C' && tabuleiro[y][j] != 'D' && tabuleiro[y][j] != 'E') {
                 tabuleiro[y][j] = '-';
             }   
         }
     }
 }
+
+
 
 // Limpa a tela do terminal.
 void limpaTela() {
@@ -177,20 +188,25 @@ void criachar() {
 
 // "Movimenta" o caractere pela mira até o seu destino final.
 void atira() {
-    int i, j;
+    int i, j, flag = 0, ianterior= 0, janterior= 0;
     char anterior = p;
     criachar();
+
     preencheTabuleiro();
-    calculaMira();
+    calculaMira(yfinal);
 
-    for(i = 0; i < largura; i++) {
-        for(j = 0; j < altura; j++) {
-
-            if(tabuleiro[i][j] == '-') {
-                tabuleiro[i][j] = anterior;
+    for(i = altura-1; i >= 0; i--) {
+        for(j = largura; j >= 0; j--) {
+            if(tabuleiro[j][i] == '-' && flag == 0) {
+                tabuleiro[j][i] = anterior;
+                flag = 1;
             }
         }
     }
+}
+// Verifica se o jogador fez algum ponto (4 ou mais peças conectadas)
+void verificaPonto() {
+    
 }
 
 int menuMain() {
@@ -215,23 +231,25 @@ int main() {
 
     limpaTela();
     preencheTabuleiro();
-    calculaMira();
+    calculaMira(yfinal);
     exibeTabuleiro();
+
     while(1) {
         if(kbhit()) {
             limpaTela();
             int a = getchar();
             if(a == 97) {
                 co_angular -= 0.14;
-                calculaMira();
+                calculaMira(yfinal);
             } else if(a == 100) {
                 co_angular += 0.14;
-                calculaMira();
+                calculaMira(yfinal);
             } else if(a == 32) {
                 atira();
             }
             exibeTabuleiro(); 
-            usleep(500);
+            usleep(1000);
+            verificaPonto();
         }
     }
 
