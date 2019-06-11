@@ -166,14 +166,14 @@ void calculaMira(int yfinal) {
             /* Necessário para evitar que a mira extrapole-se. E
             que ela sobrescreva os caracteres atirados.
             */
-            if(y > 0 && y < (largura-1) && tabuleiro[y][j] != 'A' && tabuleiro[y][j] != 'B' && tabuleiro[y][j] != 'C' && tabuleiro[y][j] != 'D' && tabuleiro[y][j] != 'E') {
+            if(tabuleiro[y][j] == 'A' || tabuleiro[y][j] == 'B' || tabuleiro[y][j] == 'C' || tabuleiro[y][j] == 'D' || tabuleiro[y][j] == 'E' || tabuleiro[i][j] == '*') 
+                break;
+            if(y > 0 && y < (largura-1)) {
                 tabuleiro[y][j] = '-';
             }   
         }
     }
 }
-
-
 
 // Limpa a tela do terminal.
 void limpaTela() {
@@ -186,27 +186,67 @@ void criachar() {
 
 }
 
-// "Movimenta" o caractere pela mira até o seu destino final.
+void verificaPonto(char peca, int localx, int localy) {
+    int i, j, soma, flag = 0;
+
+    localy -=3;
+    localx -=3;
+
+    // i*j = 49, submatriz 7*7 em torno do ponto de tiro.
+    for(i = localy; i < localy+3; i++) {
+        for(j = localx; i < localx+3; j++) {
+            if(localx == peca && flag == 0) {
+                soma++;
+            } else 
+                flag = 1;
+        }
+    }
+}
+
+// "Movimenta" o caractere pela mira ate o seu destino final.
 void atira() {
-    int i, j, flag = 0, ianterior= 0, janterior= 0;
+    int i, j, flag = 0, localx, localy;
     char anterior = p;
+    // Altera a mira da base do tabuleiro.
     criachar();
 
     preencheTabuleiro();
     calculaMira(yfinal);
 
-    for(i = altura-1; i >= 0; i--) {
-        for(j = largura; j >= 0; j--) {
-            if(tabuleiro[j][i] == '-' && flag == 0) {
-                tabuleiro[j][i] = anterior;
-                flag = 1;
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
+            if(tabuleiro[j][i] == '-') {
+                if(flag == 0) {
+                    tabuleiro[j][i] = anterior;
+                    if(i > 2)
+                        tabuleiro[localx][localy] = '-';
+                    localy = i;
+                    localx = j;
+                    flag = 1;
+                } else {
+                    tabuleiro[localx][localy] = '-';
+                    tabuleiro[j][i] = anterior;
+                    localy = i;
+                    localx = j;
+                    flag = 0;
+                }
             }
         }
+        exibeTabuleiro();
+        usleep(20000);
+        limpaTela(); 
     }
 }
-// Verifica se o jogador fez algum ponto (4 ou mais peças conectadas)
-void verificaPonto() {
-    
+
+// Desce a parece superior.
+void desceParede() {
+    int i, j, a;
+    char linhaAux[17];
+    for(i = altura-1; i >= 2; i--) {
+        for(j = largura-1, a = 0; j >= 0; j--, a++) {
+            linhaAux[a] = tabuleiro[j][i];
+        }
+    }
 }
 
 int menuMain() {
@@ -224,8 +264,26 @@ int menuMain() {
     return opcao;
 }
 
+// Marca os 20 segundos para descer a parede superior do tabuleiro.
+int temporizador(time_t inicio) {
+    time_t fim;
+
+    time(&fim);
+
+    int diferenca = difftime(fim, inicio);
+
+
+    return diferenca;
+}
+
+
+
 
 int main() {
+    int flag = 0;
+    time_t inicio;
+    time(&inicio);
+
     srand(time(0));
     criachar();
 
@@ -234,23 +292,33 @@ int main() {
     calculaMira(yfinal);
     exibeTabuleiro();
 
+
+    // a = 97, d = 100, espaco= 100, f = 102
     while(1) {
         if(kbhit()) {
             limpaTela();
-            int a = getchar();
-            if(a == 97) {
+            int tecla = getch();
+            if(tecla == 97) {
                 co_angular -= 0.14;
                 calculaMira(yfinal);
-            } else if(a == 100) {
+            } else if(tecla == 100) {
                 co_angular += 0.14;
                 calculaMira(yfinal);
-            } else if(a == 32) {
+            } else if(tecla == 32) {
                 atira();
+            } else if(tecla == 102) {
+                desceParede();
             }
             exibeTabuleiro(); 
-            usleep(1000);
-            verificaPonto();
+            usleep(10000);
         }
+
+        /*if((temporizador(inicio)+1) % 20 == 0 && flag == 0) {
+            printf("aaa");
+            flag == 1;
+        } else if((temporizador(inicio)+1) == 1 && flag == 1)
+            flag = 0;
+            */
     }
 
 }
