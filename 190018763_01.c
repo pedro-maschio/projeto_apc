@@ -88,13 +88,12 @@ int getch(void) {
 /* Variáveis Globais */
 char tabuleiro[10][17];
 int altura=9, largura = 16, velocidade=60, perdeu = 0, pontuacao = 0;
-int yfinal = 1;
 double co_angular = 0;
 char p; 
 
 
 
-/*  Exibe o tabuleiro, rotacionando-o para que a linha fique
+/*  Exibe o tabuleiro, rotacionando-o para que a mira fique
     posicionada corretamente, além de adicionar cores às
     letras.
 */
@@ -150,27 +149,32 @@ void limpaTabuleiro() {
 }
 
 // Calcula e adiciona a mira ao tabuleiro.
-void calculaMira(int yfinal) { 
-
-    limpaTabuleiro();
+void calculaMira() { 
 
     int i, j;
     double aux;
 
-    for(i = 0; i < largura; i++) {
-        for(j = 2; j < altura-yfinal; j++) {
-            aux = co_angular*j + (largura/2);
+    // Para impedir que a mira desapareça à direita ou à esquerda.
+    if(co_angular >= -3.10 && co_angular <= 3.10) {
 
-            int y = (int) aux;
+        limpaTabuleiro();
+
+        for(i = 0; i < largura; i++) {
+            for(j = 2; j < altura-1; j++) {
+                aux = co_angular*j + (largura/2);
+
+                int y = (int) aux;
                 
-            /* Necessário para evitar que a mira extrapole-se. E
-            que ela sobrescreva os caracteres atirados.
-            */
-            if(tabuleiro[y][j] == 'A' || tabuleiro[y][j] == 'B' || tabuleiro[y][j] == 'C' || tabuleiro[y][j] == 'D' || tabuleiro[y][j] == 'E' || tabuleiro[i][j] == '*') 
-                break;
-            if(y > 0 && y < (largura-1)) {
-                tabuleiro[y][j] = '-';
-            }   
+                /* Necessário para evitar que a mira extrapole-se. E
+                que ela sobrescreva os caracteres atirados.
+                */
+                if(tabuleiro[y][j] == 'A' || tabuleiro[y][j] == 'B' || tabuleiro[y][j] == 'C' || tabuleiro[y][j] == 'D' ||
+                    tabuleiro[y][j] == 'E' || tabuleiro[i][j] == '*' || tabuleiro[i][j] == '#') 
+                    break;
+                if(y > 0 && y < (largura-1)) {
+                    tabuleiro[y][j] = '-';
+                }   
+            }
         }
     }
 }
@@ -186,22 +190,9 @@ void criachar() {
 
 }
 
-void verificaPonto(char peca, int localx, int localy) {
-    int i, j, soma, flag = 0;
 
-    localy -=3;
-    localx -=3;
 
-    // i*j = 49, submatriz 7*7 em torno do ponto de tiro.
-    for(i = localy; i < localy+3; i++) {
-        for(j = localx; i < localx+3; j++) {
-            if(localx == peca && flag == 0) {
-                soma++;
-            } else 
-                flag = 1;
-        }
-    }
-}
+
 
 // "Movimenta" o caractere pela mira ate o seu destino final.
 void atira() {
@@ -211,7 +202,7 @@ void atira() {
     criachar();
 
     preencheTabuleiro();
-    calculaMira(yfinal);
+    calculaMira();
 
     for(i = 0; i < altura; i++) {
         for(j = 0; j < largura; j++) {
@@ -235,21 +226,13 @@ void atira() {
         exibeTabuleiro();
         usleep(20000);
         limpaTela(); 
+
     }
 }
 
-// Desce a parece superior.
-void desceParede() {
-    int i, j, a;
-    char linhaAux[17];
-    for(i = altura-1; i >= 2; i--) {
-        for(j = largura-1, a = 0; j >= 0; j--, a++) {
-            linhaAux[a] = tabuleiro[j][i];
-        }
-    }
-}
 
 int menuMain() {
+    limpaTela();
     int opcao;
     
     printf("1 - Jogar\n");
@@ -264,6 +247,49 @@ int menuMain() {
     return opcao;
 }
 
+// Exibe as instrucoes do jogo.
+void instrucoes() {
+    limpaTela();
+    printf(BLUE "\t\tNOME DO JOGO\n" RESET);
+    printf("COMANDOS: \n");
+    printf("\t Pressione a para mover a mira para a esquerda.\n");
+    printf("\t Pressione d para mover a mira para a direita.\n");
+    printf("\t Pressione espaco para atirar na posição desejada.\n\n");
+    printf("O jogador ganha uma quantidade de pontos ao formar 4 ou mais pecas de\n");
+    printf("mesmo tipo. A quantidade de pontos eh proporcional ao numero de pecas conectadas.\n\n");
+    printf("Aperte Enter para voltar ao Menu Principal...");
+    getchar();
+    if(getchar() == 10)
+        menuMain();
+}
+
+// Funcao a ser implementada futuramente.
+void configuracoes() {
+    limpaTela();
+    printf(BLUE "\t\tNOME DO JOGO\n" RESET);
+    printf("Funcao ainda nao implementada.\n\n");
+    printf("Aperte Enter para voltar ao Menu Principal...");
+    getchar();
+    if(getchar() == 10)
+        menuMain();
+}
+
+// Funcao a ser implementada futuramente.
+void ranking() {
+    limpaTela();
+    printf(BLUE "\t\tNOME DO JOGO\n" RESET);
+    printf("Funcao ainda nao implementada.\n\n");
+    printf("Aperte Enter para voltar ao Menu Principal...");
+
+    getchar();
+
+    if(getchar() == 10)
+        menuMain();
+}
+
+
+
+
 // Marca os 20 segundos para descer a parede superior do tabuleiro.
 int temporizador(time_t inicio) {
     time_t fim;
@@ -277,19 +303,29 @@ int temporizador(time_t inicio) {
 }
 
 
+// Desce a parede superior do tabuleiro
+void desceTabuleiro() {
+    int i, j;
 
+    char aux[10][17];
 
-int main() {
-    int flag = 0;
-    time_t inicio;
-    time(&inicio);
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
+            aux[i][j] = tabuleiro[j][i];
+        }
+    }
 
-    srand(time(0));
-    criachar();
+    for(i = altura-2; i > 1; i--) {
+        for(j = 0; j < largura; j++) {
+            tabuleiro[j][i] = aux[i+1][j];
+        }
+    }
+}
 
+void iniciaJogo() {
     limpaTela();
     preencheTabuleiro();
-    calculaMira(yfinal);
+    calculaMira();
     exibeTabuleiro();
 
 
@@ -300,25 +336,54 @@ int main() {
             int tecla = getch();
             if(tecla == 97) {
                 co_angular -= 0.14;
-                calculaMira(yfinal);
+                calculaMira();
             } else if(tecla == 100) {
                 co_angular += 0.14;
-                calculaMira(yfinal);
+                calculaMira();
             } else if(tecla == 32) {
                 atira();
-            } else if(tecla == 102) {
-                desceParede();
-            }
+            } 
+
+            
             exibeTabuleiro(); 
             usleep(10000);
         }
-
-        /*if((temporizador(inicio)+1) % 20 == 0 && flag == 0) {
-            printf("aaa");
-            flag == 1;
-        } else if((temporizador(inicio)+1) == 1 && flag == 1)
-            flag = 0;
-            */
     }
+}
+
+
+int main() {
+    int opcao;
+    time_t inicio;
+    time(&inicio);
+
+    srand(time(0));
+    criachar();
+
+    do {
+        opcao = menuMain();
+
+        switch(opcao) {
+            case 1:
+                iniciaJogo();
+                break;
+            case 2: 
+                instrucoes();
+                break;
+            case 3:
+                configuracoes();
+                break;
+            case 4:
+                ranking();
+                break;
+            case 5:
+                printf("Obrigado por jogar!");
+                break;
+
+        }
+
+    } while(opcao != 5);
+
+
 
 }
