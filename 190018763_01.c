@@ -86,8 +86,8 @@ int getch(void) {
 
 
 /* Variáveis Globais */
-char tabuleiro[10][17];
-int altura=9, largura = 16, velocidade=60, perdeu = 0, pontuacao = 0;
+char tabuleiro[10][17], pecasc[10][17];;
+int altura=9, largura = 16, velocidade=60, perdeu = 0, pontuacao = 0, conectadas = 0;
 double co_angular = 0;
 char p; 
 
@@ -100,7 +100,7 @@ char p;
 void exibeTabuleiro() {
     int i, j;
 
-    printf("Pontos: %d\n\n", pontuacao);
+    printf("Pontos: %d\nConectadas: %d\n\n", pontuacao, conectadas);
 
     for(j = altura-1; j >= 0; j--) {
         for(i = 0; i < largura; i++) {
@@ -128,12 +128,16 @@ void preencheTabuleiro() {
         for(j = 0; j < altura; j++) {
             if(i == 0 || j == 0 || j == (altura-1) || i == (largura-1))
                 tabuleiro[i][j] = '#';
-            else if(j == 1 && i == (altura-1))
-                tabuleiro[i][j] = p;
             else if(tabuleiro[i][j] != 'A' && tabuleiro[i][j] != 'B' && tabuleiro[i][j] != 'C' && tabuleiro[i][j] != 'D' && tabuleiro[i][j] != 'E')
                 tabuleiro[i][j] = ' ';
         }
     }
+}
+
+void adicionaPecaBase(){
+    int j = 1, i = altura-1;
+    
+    tabuleiro[i][j] = p;
 }
 
 // Limpa o tabuleiro para, posteriormente, atualizar a mira.
@@ -168,8 +172,7 @@ void calculaMira() {
                 /* Necessário para evitar que a mira extrapole-se. E
                 que ela sobrescreva os caracteres atirados.
                 */
-                if(tabuleiro[y][j] == 'A' || tabuleiro[y][j] == 'B' || tabuleiro[y][j] == 'C' || tabuleiro[y][j] == 'D' ||
-                    tabuleiro[y][j] == 'E' || tabuleiro[i][j] == '*' || tabuleiro[i][j] == '#') 
+                if(tabuleiro[y][j] != ' ') 
                     break;
                 if(y > 0 && y < (largura-1)) {
                     tabuleiro[y][j] = '-';
@@ -191,7 +194,48 @@ void criachar() {
 }
 
 
+/* Verifica se as peças estão conectadas e atribui pontos
+   correspondentes à sua quantidade */
+void verificaPontos(char peca, int localx, int localy) {
 
+    if(tabuleiro[localx-1][localy] == peca && (localx-1) > 0 && (localx-1) < 17) {
+        conectadas++;
+        localx--;
+
+        pecasc[localy][localx] = '*';
+
+        if(localx > 0) {
+            verificaPontos(peca, localx, localy);
+        }
+    }
+    else if(tabuleiro[localx+1][localy] == peca && (localx+1) > 0 && (localx+1) < 17) {
+        conectadas++;
+        localx++;
+
+        pecasc[localy][localx] = '*';
+
+        if(localx > 0 && localx < 17) {
+            verificaPontos(peca, localx, localy);
+        }
+    }
+
+}
+
+
+
+void exibeAsteriscos() {
+    int i, j;
+
+    limpaTela();
+
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
+            printf("%c", pecasc[i][j]);
+        }
+        printf("\n");
+    }
+    usleep(500000);
+}
 
 
 // "Movimenta" o caractere pela mira ate o seu destino final.
@@ -199,9 +243,9 @@ void atira() {
     int i, j, flag = 0, localx, localy;
     char anterior = p;
     // Altera a mira da base do tabuleiro.
-    criachar();
-
-    preencheTabuleiro();
+    
+    //criachar();
+    //adicionaPecaBase();
     calculaMira();
 
     for(i = 0; i < altura; i++) {
@@ -228,8 +272,10 @@ void atira() {
         limpaTela(); 
 
     }
+    conectadas = 0;
+    memset(pecasc, ' ', sizeof(pecasc));
+    verificaPontos(anterior, localx, localy);
 }
-
 
 int menuMain() {
     limpaTela();
@@ -288,24 +334,10 @@ void ranking() {
 }
 
 
-
-
-// Marca os 20 segundos para descer a parede superior do tabuleiro.
-int temporizador(time_t inicio) {
-    time_t fim;
-
-    time(&fim);
-
-    int diferenca = difftime(fim, inicio);
-
-
-    return diferenca;
-}
-
-
 // Desce a parede superior do tabuleiro
 void desceTabuleiro() {
     int i, j;
+    int pecas = 0;
 
     char aux[10][17];
 
@@ -322,15 +354,35 @@ void desceTabuleiro() {
     }
 }
 
+// Marca os 20 segundos para descer a parede superior do tabuleiro.
+int temporizador(time_t inicio) {
+    time_t fim;
+
+    time(&fim);
+
+    int diferenca = difftime(fim, inicio);
+
+    
+    return diferenca;
+}
+
+
+/* Exibe inicialmente o tabuleiro e gerencia todas as
+   funções de jogo */
 void iniciaJogo() {
+    int contatempo = 0;
+    time_t inicio;
+    time(&inicio);
+
+
     limpaTela();
     preencheTabuleiro();
+    adicionaPecaBase();
     calculaMira();
     exibeTabuleiro();
-
-
-    // a = 97, d = 100, espaco= 100, f = 102
-    while(1) {
+    // a = 97, d = 100, espaco = 100.
+    do {
+        
         if(kbhit()) {
             limpaTela();
             int tecla = getch();
@@ -342,20 +394,32 @@ void iniciaJogo() {
                 calculaMira();
             } else if(tecla == 32) {
                 atira();
-            } 
+            } else if(tecla == 102) {
+                exibeAsteriscos();
+            }
 
-            
             exibeTabuleiro(); 
             usleep(10000);
         }
-    }
+
+        // Desde a parede superior após 20 segundos.
+        limpaTela();
+        contatempo = temporizador(inicio);
+        if(contatempo == 30) {
+            desceTabuleiro();
+            time(&inicio);
+        }
+        exibeTabuleiro();
+
+        usleep(10000);
+
+
+    } while(1);
 }
 
 
 int main() {
     int opcao;
-    time_t inicio;
-    time(&inicio);
 
     srand(time(0));
     criachar();
