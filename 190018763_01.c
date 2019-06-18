@@ -134,10 +134,9 @@ void preencheTabuleiro() {
     }
 }
 
+// Adiciona a peça aleatória à base do tabuleiro.
 void adicionaPecaBase(){
-    int j = 1, i = altura-1;
-    
-    tabuleiro[i][j] = p;
+    tabuleiro[altura-1][1] = p;
 }
 
 // Limpa o tabuleiro para, posteriormente, atualizar a mira.
@@ -193,11 +192,7 @@ void criachar() {
 
 }
 
-
-/* Verifica se as peças estão conectadas e atribui pontos
-   correspondentes à sua quantidade */
-void verificaPontos(char peca, int localx, int localy) {
-
+void verificaLEsquerda(char peca, int localx, int localy) {
     if(tabuleiro[localx-1][localy] == peca && (localx-1) > 0 && (localx-1) < 17) {
         conectadas++;
         localx--;
@@ -205,20 +200,58 @@ void verificaPontos(char peca, int localx, int localy) {
         pecasc[localy][localx] = '*';
 
         if(localx > 0) {
-            verificaPontos(peca, localx, localy);
+            verificaLEsquerda(peca, localx, localy);
         }
     }
-    else if(tabuleiro[localx+1][localy] == peca && (localx+1) > 0 && (localx+1) < 17) {
+}
+void verificaLDireita(char peca, int localx, int localy) {
+    if(tabuleiro[localx+1][localy] == peca && (localx+1) > 0 && (localx+1) < 17) {
         conectadas++;
         localx++;
 
         pecasc[localy][localx] = '*';
 
-        if(localx > 0 && localx < 17) {
-            verificaPontos(peca, localx, localy);
+        if(localx < 17) {
+            verificaLDireita(peca, localx, localy);
         }
     }
+}
 
+void verificaEmCima(char peca, int localx, int localy) {
+    if(tabuleiro[localx][localy+1] == peca && (localy+1) > 0 && (localy+1) < 9) {
+        conectadas++;
+        localy++;
+
+        pecasc[localy][localx] = '*';
+
+        if(localy < 9) {
+            verificaEmCima(peca, localx, localy);
+        }
+    }
+}
+
+void verificaEmBaixo(char peca, int localx, int localy) {
+    if(tabuleiro[localx][localy-1] == peca && (localy-1) > 0 && (localy-1) < 9) {
+        conectadas++;
+        localy--;
+
+        pecasc[localy][localx] = '*';
+
+        if(localy > 0) {
+            verificaEmCima(peca, localx, localy);
+        }
+    }
+}
+
+
+/* Verifica se as peças estão conectadas e atribui pontos
+   correspondentes à sua quantidade */
+void verificaPontos(char peca, int localx, int localy) {
+
+    verificaLEsquerda(peca, localx, localy);
+    verificaLDireita(peca, localx, localy);
+    verificaEmCima(peca, localx, localy);
+    verificaEmBaixo(peca, localx, localy);
 }
 
 
@@ -405,7 +438,7 @@ void iniciaJogo() {
         // Desde a parede superior após 20 segundos.
         limpaTela();
         contatempo = temporizador(inicio);
-        if(contatempo == 30) {
+        if(contatempo == 100) {
             desceTabuleiro();
             time(&inicio);
         }
