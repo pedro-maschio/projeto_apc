@@ -192,6 +192,8 @@ void criachar() {
 
 }
 
+
+// Verifica as conexoes da lateral esquerda da peca.
 void verificaLEsquerda(char peca, int localx, int localy) {
     if(tabuleiro[localx-1][localy] == peca && (localx-1) > 0 && (localx-1) < 17) {
         conectadas++;
@@ -204,6 +206,8 @@ void verificaLEsquerda(char peca, int localx, int localy) {
         }
     }
 }
+
+// Verifica as conexoes da lateral direita da peca.
 void verificaLDireita(char peca, int localx, int localy) {
     if(tabuleiro[localx+1][localy] == peca && (localx+1) > 0 && (localx+1) < 17) {
         conectadas++;
@@ -217,6 +221,7 @@ void verificaLDireita(char peca, int localx, int localy) {
     }
 }
 
+// Verifica as conexoes da parte superior da peca.
 void verificaEmCima(char peca, int localx, int localy) {
     if(tabuleiro[localx][localy+1] == peca && (localy+1) > 0 && (localy+1) < 9) {
         conectadas++;
@@ -230,6 +235,7 @@ void verificaEmCima(char peca, int localx, int localy) {
     }
 }
 
+// Verifica as conexoes da parte inferior da peca.
 void verificaEmBaixo(char peca, int localx, int localy) {
     if(tabuleiro[localx][localy-1] == peca && (localy-1) > 0 && (localy-1) < 9) {
         conectadas++;
@@ -243,15 +249,47 @@ void verificaEmBaixo(char peca, int localx, int localy) {
     }
 }
 
+// Verifica as conexoes na diagonal superior direita.
+void verificaDiagonalD(char peca, int localx, int localy) {
+    if(tabuleiro[localx+1][localy+1] == peca && (localx+1) < 9 && (localy+1) < 17) {
+        conectadas++;
+        localy++;
+        localx++;
+
+        pecasc[localy][localx] = '*';
+
+        if(localy < 17 && localx < 9) {
+            verificaEmCima(peca, localx, localy);
+        }
+    }
+}
+
+// Verifica as conexoes na diagonal superior esquerda.
+void verificaDiagonalE(char peca, int localx, int localy) {
+    if(tabuleiro[localx-1][localy+1] == peca && (localx-1) > 0 && (localy+1) < 17) {
+        conectadas++;
+        localy++;
+        localx--;
+
+        pecasc[localy][localx] = '*';
+
+        if(localy < 17 && localx > 0) {
+            verificaEmCima(peca, localx, localy);
+        }
+    }
+}
+
 
 /* Verifica se as peças estão conectadas e atribui pontos
    correspondentes à sua quantidade */
 void verificaPontos(char peca, int localx, int localy) {
-
+    pecasc[localy][localx] = '*';
     verificaLEsquerda(peca, localx, localy);
     verificaLDireita(peca, localx, localy);
     verificaEmCima(peca, localx, localy);
     verificaEmBaixo(peca, localx, localy);
+    verificaDiagonalD(peca, localx, localy);
+    verificaDiagonalE(peca, localx, localy);
 }
 
 
@@ -261,8 +299,8 @@ void exibeAsteriscos() {
 
     limpaTela();
 
-    for(i = 0; i < altura; i++) {
-        for(j = 0; j < largura; j++) {
+    for(i = altura-1; i > 0; i--) {
+        for(j = largura-1; j > 0; j--) {
             printf("%c", pecasc[i][j]);
         }
         printf("\n");
@@ -305,8 +343,8 @@ void atira() {
         limpaTela(); 
 
     }
-    conectadas = 0;
-    memset(pecasc, ' ', sizeof(pecasc));
+    //conectadas = 0;
+    
     verificaPontos(anterior, localx, localy);
 }
 
@@ -413,6 +451,7 @@ void iniciaJogo() {
     adicionaPecaBase();
     calculaMira();
     exibeTabuleiro();
+    memset(pecasc, ' ', sizeof(pecasc));
     // a = 97, d = 100, espaco = 100.
     do {
         
@@ -420,10 +459,10 @@ void iniciaJogo() {
             limpaTela();
             int tecla = getch();
             if(tecla == 97) {
-                co_angular -= 0.14;
+                co_angular -= 0.13;
                 calculaMira();
             } else if(tecla == 100) {
-                co_angular += 0.14;
+                co_angular += 0.13;
                 calculaMira();
             } else if(tecla == 32) {
                 atira();
