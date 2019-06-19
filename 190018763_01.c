@@ -192,7 +192,7 @@ void criachar() {
 
 }
 
-
+/*
 // Verifica as conexoes da lateral esquerda da peca.
 void verificaLEsquerda(char peca, int localx, int localy) {
     if(tabuleiro[localx-1][localy] == peca && (localx-1) > 0 && (localx-1) < 17) {
@@ -280,16 +280,36 @@ void verificaDiagonalE(char peca, int localx, int localy) {
 }
 
 
+
+
 /* Verifica se as peças estão conectadas e atribui pontos
    correspondentes à sua quantidade */
+
+void verifica(char peca, int localx, int localy) {
+
+
+    if(tabuleiro[localx+1][localy] == peca) {
+        pecasc[localy][localx+1] = '*';
+        conectadas++;
+    }
+    if(tabuleiro[localx-1][localy] == peca) {
+        pecasc[localy][localx-1] = '*';
+        conectadas++;
+    }
+    if(tabuleiro[localx][localy-1] == peca) {
+        pecasc[localy-1][localx] = '*';
+        conectadas++;
+    }
+}
 void verificaPontos(char peca, int localx, int localy) {
-    pecasc[localy][localx] = '*';
-    verificaLEsquerda(peca, localx, localy);
-    verificaLDireita(peca, localx, localy);
-    verificaEmCima(peca, localx, localy);
-    verificaEmBaixo(peca, localx, localy);
-    verificaDiagonalD(peca, localx, localy);
-    verificaDiagonalE(peca, localx, localy);
+    int i, j;
+
+    for(i = 2; i < largura; i++) {
+        for(j = 0; j < altura; j++) {
+            verifica(peca, j, i);
+        }
+    }
+
 }
 
 
@@ -343,8 +363,8 @@ void atira() {
         limpaTela(); 
 
     }
-    //conectadas = 0;
-    
+    conectadas = 0;
+    memset(pecasc, ' ', sizeof(pecasc));
     verificaPontos(anterior, localx, localy);
 }
 
