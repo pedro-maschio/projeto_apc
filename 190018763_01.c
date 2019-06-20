@@ -229,7 +229,7 @@ void explode(char peca) {
     
         limpaTela();
         exibeTabuleiro();
-        usleep(50000);
+        usleep(20000);
 
         for(i = 0; i < altura; i++) {
             for(j = 0; j < largura; j++) {
@@ -248,7 +248,7 @@ void verifica(char peca, int localy, int localx) {
     
     if(tabuleiro[localy][localx] == peca) {
         pecasc[localy][localx] = '*';
-    
+        conectadas++;
         if(tabuleiro[localy][localx+1] == peca) {
             pecasc[localy][localx+1] = '*';
             conectadas++;
@@ -288,7 +288,7 @@ void atira() {
     char anterior = p;
     // Altera a mira da base do tabuleiro.
     
-    //criachar();
+    criachar();
     adicionaPecaBase();
     calculaMira();
 
