@@ -248,7 +248,7 @@ void verifica(char peca, int localy, int localx) {
     
     if(tabuleiro[localy][localx] == peca) {
         pecasc[localy][localx] = '*';
-        conectadas++;
+        
         if(tabuleiro[localy][localx+1] == peca) {
             pecasc[localy][localx+1] = '*';
             conectadas++;
@@ -266,7 +266,7 @@ void verifica(char peca, int localy, int localx) {
             conectadas++;
         }
     }
-    if(conectadas <= 2)
+    if(conectadas <= 3)
         memset(pecasc, ' ', sizeof(pecasc));
 
 }
