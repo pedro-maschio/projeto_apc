@@ -102,8 +102,8 @@ void exibeTabuleiro() {
 
     printf("Pontos: %d\nConectadas: %d\n\n", pontuacao, conectadas);
 
-    for(j = altura-1; j >= 0; j--) {
-        for(i = 0; i < largura; i++) {
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
             if(tabuleiro[i][j] == 'A')
                 printf(RED "%c" RESET, tabuleiro[i][j]);
             else if(tabuleiro[i][j] == 'B')
@@ -124,9 +124,9 @@ void exibeTabuleiro() {
 // Adiciona as bordas do tabuleiro, bem como o caractere aleatório.
 void preencheTabuleiro() {
     int i, j;
-    for(i = 0; i < largura; i++) {
-        for(j = 0; j < altura; j++) {
-            if(i == 0 || j == 0 || j == (altura-1) || i == (largura-1))
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
+            if(i == 0 || j == 0 || j == (largura-1) || i == (altura-1))
                 tabuleiro[i][j] = '#';
             else if(tabuleiro[i][j] != 'A' && tabuleiro[i][j] != 'B' && tabuleiro[i][j] != 'C' && tabuleiro[i][j] != 'D' && tabuleiro[i][j] != 'E')
                 tabuleiro[i][j] = ' ';
@@ -136,15 +136,15 @@ void preencheTabuleiro() {
 
 // Adiciona a peça aleatória à base do tabuleiro.
 void adicionaPecaBase(){
-    tabuleiro[altura-1][1] = p;
+    tabuleiro[altura-2][largura/2] = p;
 }
 
 // Limpa o tabuleiro para, posteriormente, atualizar a mira.
 void limpaTabuleiro() {
     int i, j;
 
-    for(i = 0; i < largura; i++) {
-        for(j = 0; j < altura; j++) {
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
             if(tabuleiro[i][j] == '-')
                 tabuleiro[i][j] = ' ';
         }
@@ -162,22 +162,22 @@ void calculaMira() {
 
         limpaTabuleiro();
 
-        for(i = 0; i < largura; i++) {
-            for(j = 2; j < altura-1; j++) {
-                aux = co_angular*j + (largura/2);
+        for(j = 2; j < largura; j++) {
+            aux = co_angular*j + (largura/2)+1;
 
-                int y = (int) aux;
+            int y = (int) aux;
                 
-                /* Necessário para evitar que a mira extrapole-se. E
-                que ela sobrescreva os caracteres atirados.
-                */
-                if(tabuleiro[y][j] != ' ') 
-                    break;
-                if(y > 0 && y < (largura-1)) {
-                    tabuleiro[y][j] = '-';
-                }   
-            }
+            /* Necessário para evitar que a mira extrapole-se. E
+            que ela sobrescreva os caracteres atirados.
+            */
+            if(tabuleiro[altura-j][-y] != ' ') 
+                break;
+
+            if(y < 17)
+                tabuleiro[altura-j][-y] = '-';
+              
         }
+        
     }
 }
 
@@ -192,141 +192,85 @@ void criachar() {
 
 }
 
-/*
-// Verifica as conexoes da lateral esquerda da peca.
-void verificaLEsquerda(char peca, int localx, int localy) {
-    if(tabuleiro[localx-1][localy] == peca && (localx-1) > 0 && (localx-1) < 17) {
-        conectadas++;
-        localx--;
-
-        pecasc[localy][localx] = '*';
-
-        if(localx > 0) {
-            verificaLEsquerda(peca, localx, localy);
-        }
-    }
-}
-
-// Verifica as conexoes da lateral direita da peca.
-void verificaLDireita(char peca, int localx, int localy) {
-    if(tabuleiro[localx+1][localy] == peca && (localx+1) > 0 && (localx+1) < 17) {
-        conectadas++;
-        localx++;
-
-        pecasc[localy][localx] = '*';
-
-        if(localx < 17) {
-            verificaLDireita(peca, localx, localy);
-        }
-    }
-}
-
-// Verifica as conexoes da parte superior da peca.
-void verificaEmCima(char peca, int localx, int localy) {
-    if(tabuleiro[localx][localy+1] == peca && (localy+1) > 0 && (localy+1) < 9) {
-        conectadas++;
-        localy++;
-
-        pecasc[localy][localx] = '*';
-
-        if(localy < 9) {
-            verificaEmCima(peca, localx, localy);
-        }
-    }
-}
-
-// Verifica as conexoes da parte inferior da peca.
-void verificaEmBaixo(char peca, int localx, int localy) {
-    if(tabuleiro[localx][localy-1] == peca && (localy-1) > 0 && (localy-1) < 9) {
-        conectadas++;
-        localy--;
-
-        pecasc[localy][localx] = '*';
-
-        if(localy > 0) {
-            verificaEmCima(peca, localx, localy);
-        }
-    }
-}
-
-// Verifica as conexoes na diagonal superior direita.
-void verificaDiagonalD(char peca, int localx, int localy) {
-    if(tabuleiro[localx+1][localy+1] == peca && (localx+1) < 9 && (localy+1) < 17) {
-        conectadas++;
-        localy++;
-        localx++;
-
-        pecasc[localy][localx] = '*';
-
-        if(localy < 17 && localx < 9) {
-            verificaEmCima(peca, localx, localy);
-        }
-    }
-}
-
-// Verifica as conexoes na diagonal superior esquerda.
-void verificaDiagonalE(char peca, int localx, int localy) {
-    if(tabuleiro[localx-1][localy+1] == peca && (localx-1) > 0 && (localy+1) < 17) {
-        conectadas++;
-        localy++;
-        localx--;
-
-        pecasc[localy][localx] = '*';
-
-        if(localy < 17 && localx > 0) {
-            verificaEmCima(peca, localx, localy);
-        }
-    }
-}
-
-
-
-
-/* Verifica se as peças estão conectadas e atribui pontos
-   correspondentes à sua quantidade */
-
-void verifica(char peca, int localx, int localy) {
-
-
-    if(tabuleiro[localx+1][localy] == peca) {
-        pecasc[localy][localx+1] = '*';
-        conectadas++;
-    }
-    if(tabuleiro[localx-1][localy] == peca) {
-        pecasc[localy][localx-1] = '*';
-        conectadas++;
-    }
-    if(tabuleiro[localx][localy-1] == peca) {
-        pecasc[localy-1][localx] = '*';
-        conectadas++;
-    }
-}
-void verificaPontos(char peca, int localx, int localy) {
-    int i, j;
-
-    for(i = 2; i < largura; i++) {
-        for(j = 0; j < altura; j++) {
-            verifica(peca, j, i);
-        }
-    }
-
-}
-
-
 
 void exibeAsteriscos() {
     int i, j;
 
     limpaTela();
+    printf("Pontos: %d\nConectadas: %d\n\n", pontuacao, conectadas);
 
-    for(i = altura-1; i > 0; i--) {
-        for(j = largura-1; j > 0; j--) {
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
             printf("%c", pecasc[i][j]);
         }
         printf("\n");
     }
     usleep(500000);
 }
+
+// Verifica se as peças estão conectadas.
+void verifica(char peca, int localy, int localx) {
+
+    if(tabuleiro[localy][localx] == peca) {
+        if(tabuleiro[localy][localx+1] == peca) {
+            pecasc[localy][localx+1] = '*';
+            conectadas++;
+        }
+        if(tabuleiro[localy][localx-1] == peca) {
+            pecasc[localy][localx-1] = '*';
+            conectadas++;
+        }
+        if(tabuleiro[localy+1][localx] == peca) {
+            pecasc[localy+1][localx] = '*';
+            conectadas++;
+        }
+    }
+}
+
+/* Percorre a matriz invocando a função que verifica a adjacência
+   dos pontos */
+void verificaPontos(char peca, int localy, int localx) {
+    int i, j;
+
+    for(i = 1; i < altura-3; i++) {
+        for(j = 1; j < largura-1; j++) {
+            verifica(peca, i, j);
+        }
+    }
+
+}
+
+void explode(char peca) {
+    int i, j, count = 0;
+
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
+            if(pecasc[i][j] == '*' && tabuleiro[i][j] == peca)
+                count++;
+        }
+    }
+
+    if(count >= 4) {
+        for(i = 0; i < altura; i++) {
+            for(j = 0; j < largura; j++) {
+                if(pecasc[i][j] == '*' && tabuleiro[i][j] == peca)
+                    tabuleiro[i][j] = '*';
+            }
+        }
+    }
+    
+    exibeTabuleiro();
+    usleep(50000);
+
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
+            if(tabuleiro[i][j] == '*')
+                tabuleiro[i][j] = ' ';
+        }
+    }
+    calculaMira();
+}
+
 
 
 // "Movimenta" o caractere pela mira ate o seu destino final.
@@ -336,27 +280,28 @@ void atira() {
     // Altera a mira da base do tabuleiro.
     
     //criachar();
-    //adicionaPecaBase();
+    adicionaPecaBase();
     calculaMira();
 
-    for(i = 0; i < altura; i++) {
-        for(j = 0; j < largura; j++) {
-            if(tabuleiro[j][i] == '-') {
+    for(i = altura-2; i >= 0; i--) {
+        for(j = largura-1; j >= 0; j--) {
+            if(tabuleiro[i][j] == '-') {
                 if(flag == 0) {
-                    tabuleiro[j][i] = anterior;
-                    if(i > 2)
-                        tabuleiro[localx][localy] = '-';
+                    tabuleiro[i][j] = anterior;
+                    if(i < altura-4)
+                        tabuleiro[localy][localx] = '-';
                     localy = i;
                     localx = j;
                     flag = 1;
                 } else {
-                    tabuleiro[localx][localy] = '-';
-                    tabuleiro[j][i] = anterior;
+                    tabuleiro[localy][localx] = '-';
+                    tabuleiro[i][j] = anterior;
                     localy = i;
                     localx = j;
                     flag = 0;
                 }
             }
+
         }
         exibeTabuleiro();
         usleep(20000);
@@ -365,7 +310,8 @@ void atira() {
     }
     conectadas = 0;
     memset(pecasc, ' ', sizeof(pecasc));
-    verificaPontos(anterior, localx, localy);
+    verificaPontos(anterior, localy, localx);
+    explode(anterior);
 }
 
 int menuMain() {
@@ -434,13 +380,13 @@ void desceTabuleiro() {
 
     for(i = 0; i < altura; i++) {
         for(j = 0; j < largura; j++) {
-            aux[i][j] = tabuleiro[j][i];
+            aux[i][j] = tabuleiro[i][j];
         }
     }
 
     for(i = altura-2; i > 1; i--) {
         for(j = 0; j < largura; j++) {
-            tabuleiro[j][i] = aux[i+1][j];
+            tabuleiro[i][j] = aux[i+1][j];
         }
     }
 }
@@ -479,10 +425,10 @@ void iniciaJogo() {
             limpaTela();
             int tecla = getch();
             if(tecla == 97) {
-                co_angular -= 0.13;
+                co_angular += 0.13;
                 calculaMira();
             } else if(tecla == 100) {
-                co_angular += 0.13;
+                co_angular -= 0.13;
                 calculaMira();
             } else if(tecla == 32) {
                 atira();
