@@ -10,9 +10,9 @@
 #	Turma: A									#
 #	Versão do compilador: C99					#
 #	Descricao: Um divertido jogo estilo Puzzle  #
-#    Bobble. São 5 letras com cores diferentes, #
-#   o objetivo e unir 4 letras de cores         #
-#   iguais e fazer pontos!                      #
+#   Bobble. São 5 letras com cores diferentes,  #
+#   o objetivo e unir 4 letras iguais e fazer   #
+#   pontos!                                     #
 #                                               #
 #################################################
 */
@@ -91,6 +91,10 @@ int altura=9, largura = 16, velocidade=60, perdeu = 0, pontuacao = 0, conectadas
 double co_angular = 0;
 char p; 
 
+/* Para remover os warnings, devido ao fato da funcaoo ser chamada
+   antes de sua declaracao */
+void menuMain();
+
 
 
 /*  Exibe o tabuleiro, rotacionando-o para que a mira fique
@@ -154,30 +158,27 @@ void limpaTabuleiro() {
 // Calcula e adiciona a mira ao tabuleiro.
 void calculaMira() { 
 
-    int i, j;
+    int i, j, y;
     double aux;
 
-    // Para impedir que a mira desapareca a direita ou a esquerda.
-    if(co_angular >= -3.10 && co_angular <= 3.10) {
+    limpaTabuleiro();
 
-        limpaTabuleiro();
+    for(j = 2; j < largura; j++) {
+        aux = co_angular*j + (largura/2)+1;
 
-        for(j = 2; j < largura; j++) {
-            aux = co_angular*j + (largura/2)+1;
-
-            int y = (int) aux;
+        y = (int) aux;
                 
-            /* Necessario para evitar que a mira extrapole-se. E
-            que ela sobrescreva os caracteres atirados.
-            */
-            if(tabuleiro[altura-j][-y] != ' ') 
-                break;
-            if(y < 17)
-                tabuleiro[altura-j][-y] = '-';
+        /* Necessario para evitar que a mira extrapole-se. E
+        que ela sobrescreva os caracteres atirados.
+        */
+        if(tabuleiro[altura-j][-y] != ' ') 
+            break;
+        if(y < 17)
+            tabuleiro[altura-j][-y] = '-';
               
-        }
-        
     }
+        
+    
 }
 
 // Limpa a tela do terminal.
@@ -190,7 +191,6 @@ void criachar() {
     p = 'A' + rand() % 5;
 
 }
-
 
 void exibeAsteriscos() {
     int i, j;
@@ -207,80 +207,81 @@ void exibeAsteriscos() {
     usleep(500000);
 }
 
-
-// Cria o efeito de "explosao" no jogo.
-void explode(char peca) {
-    int i, j, count = 0;
-
-    for(i = 0; i < altura; i++) {
-        for(j = 0; j < largura; j++) {
-            if(pecasc[i][j] == '*' && tabuleiro[i][j] == peca)
-                count++;
-        }
-    }
-    if(count >= 4) {
-    
-        for(i = 0; i < altura; i++) {
-            for(j = 0; j < largura; j++) {
-                if(pecasc[i][j] == '*' && tabuleiro[i][j] == peca)
-                    tabuleiro[i][j] = '*';
-            }
-        }
-    
-        limpaTela();
-        exibeTabuleiro();
-        usleep(20000);
-
-        for(i = 0; i < altura; i++) {
-            for(j = 0; j < largura; j++) {
-                if(tabuleiro[i][j] == '*')
-                    tabuleiro[i][j] = ' ';
-            }
-        }
-        exibeTabuleiro();
-        limpaTela();
-        calculaMira();
-    }
-    
-}
-
-void verifica(char peca, int localy, int localx) {
-    
-    if(tabuleiro[localy][localx] == peca) {
-        pecasc[localy][localx] = '*';
-        
-        if(tabuleiro[localy][localx+1] == peca) {
-            pecasc[localy][localx+1] = '*';
-            conectadas++;
-        }
-        if(tabuleiro[localy][localx-1] == peca) {
-            pecasc[localy][localx-1] = '*';
-            conectadas++;
-        }
-        if(tabuleiro[localy+1][localx] == peca) {
-            pecasc[localy+1][localx] = '*';
-            conectadas++;
-        }
-        if(tabuleiro[localy-1][localx] == peca) {
-            pecasc[localy-1][localx] = '*';
-            conectadas++;
-        }
-    }
-    if(conectadas <= 3)
-        memset(pecasc, ' ', sizeof(pecasc));
-
-}
-
-void verificaPontos(char peca, int localy, int localx) {
+// Cria o efeito de explosão das peças do tabuleiro.
+void explode() {
     int i, j;
 
     for(i = 1; i < altura-3; i++) {
         for(j = 1; j < largura-1; j++) {
-            verifica(peca, i, j);
+            if(pecasc[i][j] == '*')
+                tabuleiro[i][j] = '*';
+        }
+    }
+    limpaTela();
+    exibeTabuleiro();
+    usleep(5000);
+
+    for(i = 1; i < altura-3; i++) {
+        for(j = 1; j < largura-1; j++) {
+            if(tabuleiro[i][j] == '*')
+                tabuleiro[i][j] = ' ';
+        }
+    }
+    limpaTela();
+    /* Necessário para a mira preencher o local de onde estavam as peças
+    que foram explodidas. */
+    calculaMira();
+}
+
+// Verifica as pecas conectadas e as marca em um tabuleiro auxiliar.    
+void ehPeca(char peca, int localy, int localx) {
+    int flag = 0;
+    if(tabuleiro[localy][localx] == peca) {
+        if(tabuleiro[localy][localx+1] == peca) {
+            pecasc[localy][localx+1] = '*';
+            flag++;
+        }
+        if(tabuleiro[localy+1][localx] == peca) {
+            pecasc[localy+1][localx] = '*';
+            flag++;
+        }
+        if(tabuleiro[localy+1][localx+1] == peca) {
+            pecasc[localy+1][localx+1] = '*';
+            flag++;
+        }
+        if(tabuleiro[localy+1][localx-1] == peca) {
+            pecasc[localy+1][localx-1] = '*';
+            flag++;
+        }
+        if(flag != 0 )
+            pecasc[localy][localx] = '*';
+    }
+}
+
+void conectado(char peca, int localy, int localx) {
+    int flag = 0, i, j;
+
+    for(i = 1; i < altura-2; i++) {
+        for(j = 1; j < largura-1; j++) {
+            if(pecasc[i][j] == '*')
+                conectadas++;
+            if(conectadas >= 4 && (i == localy) && (j == localx))
+                explode();
         }
     }
 }
 
+// Percorre o tabuleiro para verificar as adjacentes.
+void verifica(char peca, int localy, int localx) {
+    int i, j;
+
+    for(i = 1; i < altura-2; i++) {
+        for(j = 1; j < largura-1; j++) {
+            ehPeca(peca, i, j);
+        }
+    }
+    conectado(peca, localy, localx);
+}
 
 // "Movimenta" o caractere pela mira ate o seu destino final.
 void atira() {
@@ -288,7 +289,7 @@ void atira() {
     char anterior = p;
     // Altera a mira da base do tabuleiro.
     
-    criachar();
+    //criachar();
     adicionaPecaBase();
     calculaMira();
 
@@ -315,34 +316,18 @@ void atira() {
         exibeTabuleiro();
         usleep(20000);
         limpaTela(); 
-
     }
     conectadas = 0;
     memset(pecasc, ' ', sizeof(pecasc));
-    verificaPontos(anterior, localy, localx);
-    explode(anterior);
-}
-
-int menuMain() {
-    limpaTela();
-    int opcao;
+    conectadas = 0;
+    verifica(anterior, localy, localx);
     
-    printf("1 - Jogar\n");
-    printf("2 - Instrucoes\n");
-    printf("3 - Configuracoes\n");
-    printf("4 - Ranking\n");
-    printf("5 - Sair\n");
-    printf("Informe o numero correspondente a opcao desejada: ");
-
-    scanf("%d", &opcao);
-    
-    return opcao;
 }
 
 // Exibe as instrucoes do jogo.
 void instrucoes() {
     limpaTela();
-    printf(BLUE "\t\tNOME DO JOGO\n" RESET);
+    printf(BLUE "\t\tSUPER EXPLODE LETRAS\n" RESET);
     printf("COMANDOS: \n");
     printf("\t Pressione a para mover a mira para a esquerda.\n");
     printf("\t Pressione d para mover a mira para a direita.\n");
@@ -350,7 +335,9 @@ void instrucoes() {
     printf("O jogador ganha uma quantidade de pontos ao formar 4 ou mais pecas de\n");
     printf("mesmo tipo. A quantidade de pontos eh proporcional ao numero de pecas conectadas.\n\n");
     printf("Aperte Enter para voltar ao Menu Principal...");
+
     getchar();
+
     if(getchar() == 10)
         menuMain();
 }
@@ -358,10 +345,12 @@ void instrucoes() {
 // Funcao a ser implementada futuramente.
 void configuracoes() {
     limpaTela();
-    printf(BLUE "\t\tNOME DO JOGO\n" RESET);
+    printf(BLUE "\t\tSUPER EXPLODE LETRAS\n" RESET);
     printf("Funcao ainda nao implementada.\n\n");
     printf("Aperte Enter para voltar ao Menu Principal...");
+
     getchar();
+
     if(getchar() == 10)
         menuMain();
 }
@@ -369,7 +358,7 @@ void configuracoes() {
 // Funcao a ser implementada futuramente.
 void ranking() {
     limpaTela();
-    printf(BLUE "\t\tNOME DO JOGO\n" RESET);
+    printf(BLUE "\t\tSUPER EXPLODE LETRAS\n" RESET);
     printf("Funcao ainda nao implementada.\n\n");
     printf("Aperte Enter para voltar ao Menu Principal...");
 
@@ -378,7 +367,6 @@ void ranking() {
     if(getchar() == 10)
         menuMain();
 }
-
 
 // Desce a parede superior do tabuleiro
 void desceTabuleiro() {
@@ -413,13 +401,10 @@ int temporizador(time_t inicio) {
     return diferenca;
 }
 
-
-
-/* Exibe inicialmente o tabuleiro e gerencia todas as
-   funcoes de jogo */
+// Exibe inicialmente o tabuleiro e gerencia todas as funcoes de jogo 
 void iniciaJogo() {
-    int contatempo = 0, segundos = 0;
-    int perdeu = 0;
+    
+    int contatempo = 0, segundos = 0, tecla;
 
     time_t inicio;
     time(&inicio);
@@ -430,16 +415,21 @@ void iniciaJogo() {
     adicionaPecaBase();
     calculaMira();
     exibeTabuleiro();
-    // a = 97, d = 100, espaco = 100.
+    
     do {
         
         if(kbhit()) {
             limpaTela();
-            int tecla = getch();
-            if(tecla == 97) {
+
+            tecla = getch();
+            
+            /* Verifica o co_angular para evitar que ele estrapole-se.
+               a = 97, d = 100, espaco = 32.
+            */
+            if((tecla == 97 || tecla == 65) && co_angular <= 3.51) {
                 co_angular += 0.13;
                 calculaMira();
-            } else if(tecla == 100) {
+            } else if((tecla == 100 || tecla == 68) && co_angular >= -2.6) {
                 co_angular -= 0.13;
                 calculaMira();
             } else if(tecla == 32) {
@@ -455,7 +445,7 @@ void iniciaJogo() {
         // Desce a parede superior apos 20 segundos.
         limpaTela();
         contatempo = temporizador(inicio);
-        if(contatempo == 300) {
+        if(contatempo == 3000) {
             desceTabuleiro();
             time(&inicio);
             segundos++;
@@ -472,37 +462,58 @@ void iniciaJogo() {
 
 }
 
+// Exibe a tela de boas vindas ao jogador
+void boasVindas() {
+    limpaTela();
 
-int main() {
+    printf(BLUE "\n\n\t\tSUPER EXPLODE LETRAS\n\n" RESET);
+
+
+    printf("Pressione qualquer tecla para continuar.\n");
+
+    char a = getchar();    
+}
+
+// Exibe o menu principal do jogo
+void menuMain() {
+    limpaTela();
+    
     int opcao;
 
+    boasVindas();
+    limpaTela();
+
+    printf("1 - Jogar\n");
+    printf("2 - Instrucoes\n");
+    printf("3 - Configuracoes\n");
+    printf("4 - Ranking\n");
+    printf("5 - Sair\n");
+    printf("Informe o numero correspondente a opcao desejada: ");
+
+    scanf("%d", &opcao);
+    
+    switch(opcao) {
+        case 1:
+            iniciaJogo();
+            break;
+        case 2: 
+            instrucoes();
+            break;
+        case 3:
+            configuracoes();
+            break;
+        case 4:
+            ranking();
+            break;
+        case 5:
+            limpaTela();
+            printf("\nObrigado por jogar!\n");
+            break;
+    }
+}
+int main() {
     srand(time(0));
     criachar();
 
-    do {
-        opcao = menuMain();
-
-        switch(opcao) {
-            case 1:
-                iniciaJogo();
-                break;
-            case 2: 
-                instrucoes();
-                break;
-            case 3:
-                configuracoes();
-                break;
-            case 4:
-                ranking();
-                break;
-            case 5:
-                printf("Obrigado por jogar!");
-                break;
-
-        }
-
-    } while(opcao != 5);
-
-
-
+    menuMain();
 }
