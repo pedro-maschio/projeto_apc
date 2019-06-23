@@ -97,15 +97,11 @@ char p;
 void menuMain();
 
 
-
-/*  Exibe o tabuleiro, rotacionando-o para que a mira fique
-    posicionada corretamente, alem de adicionar cores as
-    letras.
-*/
+// Exibe e adiciona cores ao tabuleiro.
 void exibeTabuleiro() {
     int i, j;
 
-    printf("Pontos: %d\nConectadas: %d\n\n", pontuacao, conectadas);
+    printf("Pontos: %d\n\n", pontuacao);
 
     for(i = 0; i < altura; i++) {
         for(j = 0; j < largura; j++) {
@@ -159,7 +155,7 @@ void limpaTabuleiro() {
 // Calcula e adiciona a mira ao tabuleiro.
 void calculaMira() { 
 
-    int i, j, y;
+    int j, y, flag = 0;
     double aux;
 
     limpaTabuleiro();
@@ -173,8 +169,8 @@ void calculaMira() {
         que ela sobrescreva os caracteres atirados.
         */
         if(tabuleiro[altura-j][-y] != ' ') 
-            break;
-        if(y < 17)
+            flag = 1;
+        if(y < 17 && flag != 1)
             tabuleiro[altura-j][-y] = '-';
               
     }
@@ -192,7 +188,6 @@ void criachar() {
     p = 'A' + rand() % 5;
 
 }
-
 
 // Cria o efeito de explosao das pecas do tabuleiro.
 void explode() {
@@ -230,7 +225,7 @@ void explode() {
     }
 }
 
-
+// Verifica as conexoes das pecas.
 void verifica(char peca, int i, int j) {
     if(tabuleiro[i][j+1] == peca) {
         conectadas++;
@@ -248,6 +243,8 @@ void verifica(char peca, int i, int j) {
         verifica(peca, i-1, j-1);
     }
 }
+
+// Tambem verifica as conexoes das pecas.
 void verifica2(char peca, int i, int j) {
     if(tabuleiro[i][j] == peca) {
         if(tabuleiro[i+1][j+1] == peca) {
@@ -372,7 +369,6 @@ void ranking() {
 // Desce a parede superior do tabuleiro
 void desceTabuleiro() {
     int i, j;
-    int pecas = 0;
 
     char aux[10][17];
 
@@ -487,7 +483,7 @@ void boasVindas() {
 
     printf("Pressione qualquer tecla para continuar.\n");
 
-    char a = getchar();    
+    getchar();    
 }
 
 // Exibe o menu principal do jogo
