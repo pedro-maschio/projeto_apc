@@ -84,6 +84,7 @@ int getch(void) {
 #endif
 
 
+
 /* Variaveis Globais */
 char tabuleiro[10][17], pecasc[10][17];
 int altura = 9, largura = 16, velocidade=60, perdeu = 0, pontuacao = 0, conectadas = 0;
@@ -95,6 +96,8 @@ char p;
    antes de sua declaracao */
 void menuMain();
 
+
+
 /*  Exibe o tabuleiro, rotacionando-o para que a mira fique
     posicionada corretamente, alem de adicionar cores as
     letras.
@@ -102,7 +105,7 @@ void menuMain();
 void exibeTabuleiro() {
     int i, j;
 
-    printf("Pontos: %d\n\n", pontuacao);
+    printf("Pontos: %d\nConectadas: %d\n\n", pontuacao, conectadas);
 
     for(i = 0; i < altura; i++) {
         for(j = 0; j < largura; j++) {
@@ -136,7 +139,7 @@ void preencheTabuleiro() {
     }
 }
 
-// Adiciona a peça aleatoria a base do tabuleiro.
+// Adiciona a peca aleatoria a base do tabuleiro.
 void adicionaPecaBase(){
     tabuleiro[altura-2][largura/2] = p;
 }
@@ -190,124 +193,82 @@ void criachar() {
 
 }
 
-// Cria o efeito de explosão das peças do tabuleiro.
-void explode(int c) {
-    int i, j;
 
-    for(i = 1; i < altura-3; i++) {
-        for(j = 1; j < largura-1; j++) {
+// Cria o efeito de explosao das pecas do tabuleiro.
+void explode() {
+    int i, j, count = 0;;
+
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
             if(pecasc[i][j] == '*')
-                tabuleiro[i][j] = '*';
+                count++;
         }
     }
-    limpaTela();
-    exibeTabuleiro();
-    usleep(5000);
-
-    for(i = 1; i < altura-3; i++) {
-        for(j = 1; j < largura-1; j++) {
-            if(tabuleiro[i][j] == '*')
-                tabuleiro[i][j] = ' ';
+    if(count >= 4) {
+        for(i = 1; i < altura-3; i++) {
+            for(j = 1; j < largura-1; j++) {
+                if(pecasc[i][j] == '*')
+                    tabuleiro[i][j] = '*';
+            }
         }
-    }
-    limpaTela();
-    /* Necessário para a mira preencher o local de onde estavam as peças
-    que foram explodidas.*/ 
-    calculaMira();
+        limpaTela();
+        exibeTabuleiro();
+        usleep(5000);
 
-    pontuacao += 10*c;
+        for(i = 1; i < altura-3; i++) {
+            for(j = 1; j < largura-1; j++) {
+                if(tabuleiro[i][j] == '*')
+                    tabuleiro[i][j] = ' ';
+            }
+        }
+        limpaTela();
+        /* Necessario para a mira preencher o local no qual estavam as pecas
+        que foram explodidas.*/ 
+        calculaMira();
+
+        pontuacao += 10*count;
+    }
 }
- 
-// Calcula o numero de pecas conectadas.
-int regiaoConectada(int i, int j, char peca) {
-    int count= 0;
+
+
+void verifica(char peca, int i, int j) {
     if(tabuleiro[i][j+1] == peca) {
+        conectadas++;
         pecasc[i][j+1] = '*';
-        count++;
-    }
-    if(tabuleiro[i][j+2] == peca) {
-        pecasc[i][j+2] = '*';
-        count++;
-    }
-    if(tabuleiro[i][j+3] == peca) {
-        pecasc[i][j+3] = '*';
-        count++;
-    }
-    if(tabuleiro[i][j-1] == peca) {
-        pecasc[i][j-1] = '*';
-        count++;
-    }
-    if(tabuleiro[i][j-2] == peca) {
-        pecasc[i][j-2] = '*';
-        count++;
-    }
-    if(tabuleiro[i][j-3] == peca) {
-        pecasc[i][j-3] = '*';
-        count++;
+        verifica(peca, i, j+1);
     }
     if(tabuleiro[i-1][j] == peca) {
+        conectadas++;
         pecasc[i-1][j] = '*';
-        count++;
-    }
-    if(tabuleiro[i-2][j] == peca) {
-        pecasc[i-2][j] = '*';
-        count++;
-    }
-    if(tabuleiro[i-3][j] == peca) {
-        pecasc[i-3][j] = '*';
-        count++;
+        verifica(peca, i-1, j);
     }
     if(tabuleiro[i-1][j-1] == peca) {
+        conectadas++;
         pecasc[i-1][j-1] = '*';
-        count++;
+        verifica(peca, i-1, j-1);
     }
-    if(tabuleiro[i-1][j-3] == peca) {
-        pecasc[i-1][j-3] = '*';
-        count++;
-    }
-    if(tabuleiro[i-1][j-2] == peca) {
-        pecasc[i-1][j-2] = '*';
-        count++;
-    }
-    if(tabuleiro[i-2][j-2] == peca) {
-        pecasc[i-2][j-2] = '*';
-        count++;
-    }
-    if(tabuleiro[i+2][j-1] == peca) {
-        pecasc[i+2][j-1] = '*';
-        count++;
-    }
-    if(tabuleiro[i-3][j-3] == peca) {
-        pecasc[i-3][j-3] = '*';
-        count++;
-    }
-    if(tabuleiro[i-1][j+1] == peca) {
-        pecasc[i-1][j+1] = '*';
-        count++;
-    }
-    if(tabuleiro[i-1][j+2] == peca) {
-        pecasc[i-1][j+2] = '*';
-        count++;
-    }
-    if(tabuleiro[i-2][j+2] == peca) {
-        pecasc[i-2][j+2] = '*';
-        count++;
-    }
-    if(tabuleiro[i-3][j+3] == peca) {
-        pecasc[i-3][j+3] = '*';
-        count++;
-    }
-    if(count != 0)
-        pecasc[i][j] = '*';
-    return count;
 }
+void verifica2(char peca, int i, int j) {
+    if(tabuleiro[i][j] == peca) {
+        if(tabuleiro[i+1][j+1] == peca) {
+            conectadas++;
+            pecasc[i+1][j+1] = '*';
+            verifica2(peca, i+1, j+1);
+        }
+        if(tabuleiro[i][j-1] == peca) {
+            conectadas++;
+            pecasc[i][j-1] = '*';
+            verifica2(peca, i, j-1);
+        }
+    }
+}  
 
 // "Movimenta" o caractere pela mira ate o seu destino final.
 void atira() {
     int i, j, flag = 0, localx, localy;
     char anterior = p;
-    // Altera a mira da base do tabuleiro.
-    
+
+    // Altera a letra da base do tabuleiro.
     criachar();
     adicionaPecaBase();
     calculaMira();
@@ -336,11 +297,32 @@ void atira() {
         usleep(20000);
         limpaTela(); 
     }
+
+    // Verificacoes de conexoes.
     conectadas = 0;
     memset(pecasc, ' ', sizeof(pecasc));
-    conectadas = regiaoConectada(localy, localx, anterior);
-    if(conectadas >= 3)
-        explode(conectadas);
+    verifica(anterior, localy, localx);
+    verifica2(anterior, localy, localx);
+    if(conectadas != 0)
+        pecasc[localy][localx] = '*';
+    explode();
+
+}
+
+// PARA TESTE APENAS, REMOVER
+void exibeAsteriscos() {
+    int i, j;
+
+    limpaTela();
+    printf("Pontos: %d\nConectadas: %d\n\n", pontuacao, conectadas);
+
+    for(i = 0; i < altura; i++) {
+        for(j = 0; j < largura; j++) {
+            printf("%c", pecasc[i][j]);
+        }
+        printf("\n");
+    }
+    usleep(500000);
 }
 
 // Exibe as instrucoes do jogo.
@@ -350,7 +332,7 @@ void instrucoes() {
     printf("COMANDOS: \n");
     printf("\t Pressione a para mover a mira para a esquerda.\n");
     printf("\t Pressione d para mover a mira para a direita.\n");
-    printf("\t Pressione espaco para atirar na posição desejada.\n\n");
+    printf("\t Pressione espaco para atirar na posicao desejada.\n\n");
     printf("O jogador ganha uma quantidade de pontos ao formar 4 ou mais pecas de\n");
     printf("mesmo tipo. A quantidade de pontos eh proporcional ao numero de pecas conectadas.\n\n");
     printf("Aperte Enter para voltar ao Menu Principal...");
@@ -468,7 +450,8 @@ void iniciaJogo() {
                 calculaMira();
             } else if(tecla == 32) {
                 atira();
-            }
+            } else if(tecla == 102)
+                exibeAsteriscos();
 
             exibeTabuleiro(); 
             usleep(10000);
@@ -544,6 +527,7 @@ void menuMain() {
             break;
     }
 }
+
 int main() {
     srand(time(0));
     criachar();
