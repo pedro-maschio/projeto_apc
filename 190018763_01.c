@@ -101,7 +101,7 @@ void menuMain();
 void exibeTabuleiro() {
     int i, j;
 
-    printf("Pontos: %d\n\n", pontuacao);
+    printf("Pontos: %d\nConectadas: %d\n\n", pontuacao, conectadas);
 
     for(i = 0; i < altura; i++) {
         for(j = 0; j < largura; j++) {
@@ -227,34 +227,39 @@ void explode() {
 
 // Verifica as conexoes das pecas.
 void verifica(char peca, int i, int j) {
-    if(tabuleiro[i][j+1] == peca) {
-        conectadas++;
-        pecasc[i][j+1] = '*';
-        verifica(peca, i, j+1);
-    }
-    if(tabuleiro[i-1][j] == peca) {
-        conectadas++;
-        pecasc[i-1][j] = '*';
-        verifica(peca, i-1, j);
-    }
-    if(tabuleiro[i-1][j-1] == peca) {
-        conectadas++;
-        pecasc[i-1][j-1] = '*';
-        verifica(peca, i-1, j-1);
+    if(tabuleiro[i][j] == peca) {
+        pecasc[i][j] = '*';
+        if(tabuleiro[i][j+1] == peca) {
+            conectadas++;
+            verifica(peca, i, j+1);
+        }
+        if(tabuleiro[i-1][j] == peca) {
+            conectadas++;
+            verifica(peca, i-1, j);
+        }
+        if(tabuleiro[i-1][j-1] == peca) {
+            conectadas++;
+            verifica(peca, i-1, j-1);
+        }
+        if(tabuleiro[i-1][j-2] == peca) {
+            conectadas++;
+            verifica(peca, i-1, j-2);
+        }
     }
 }
 
-// Tambem verifica as conexoes das pecas.
+/* Tambem verifica as conexoes das pecas. Por algum motivo, ao
+manter as duas em uma unica gerava segmentation fault.
+*/
 void verifica2(char peca, int i, int j) {
     if(tabuleiro[i][j] == peca) {
+        pecasc[i][j] = '*';
         if(tabuleiro[i+1][j+1] == peca) {
             conectadas++;
-            pecasc[i+1][j+1] = '*';
             verifica2(peca, i+1, j+1);
         }
         if(tabuleiro[i][j-1] == peca) {
             conectadas++;
-            pecasc[i][j-1] = '*';
             verifica2(peca, i, j-1);
         }
     }
@@ -366,7 +371,7 @@ void ranking() {
         menuMain();
 }
 
-// Desce a parede superior do tabuleiro
+// Desce a parede superior do tabuleiro.
 void desceTabuleiro() {
     int i, j;
 
@@ -398,10 +403,11 @@ int temporizador(time_t inicio) {
     return diferenca;
 }
 
-// Verifica se ha uma peca na frente da mira para encerrar a partida.
+// Verifica se ha peca em uma das tres posicoes horizontais na frente da mira.
 int pecaFrente() {
-    if(tabuleiro[altura-3][largura/2] != '-' &&
-    tabuleiro[altura-3][largura/2] != ' ')
+    if(tabuleiro[altura-3][largura/2] != '-' && tabuleiro[altura-3][largura/2] != ' ' || 
+    tabuleiro[altura-3][largura/2-1] != ' ' && tabuleiro[altura-3][largura/2-1] != '-' ||
+    tabuleiro[altura-3][largura/2+1] != ' ' && tabuleiro[altura-3][largura/2+1] != '-')
         return 1;
     return 0;
 }
@@ -436,7 +442,7 @@ void iniciaJogo() {
             tecla = getch();
             
             /* Verifica o co_angular para evitar que ele estrapole-se.
-               a = 97, d = 100, espaco = 32.
+               a = 97, A = 65, d = 100, D = 68, espaco = 32.
             */
             if((tecla == 97 || tecla == 65) && co_angular <= 3.51) {
                 co_angular += 0.13;
