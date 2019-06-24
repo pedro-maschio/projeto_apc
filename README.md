@@ -1,2 +1,2 @@
 # projeto_apc
-Jogo estilo Puzzle Bobble feito em C.
+A função usleep() depende da velocidade do processador. Por esta razão, algumas transições têm demonstrado velocidade diferente em diferentes computadores.
