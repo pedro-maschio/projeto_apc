@@ -87,7 +87,7 @@ int getch(void) {
 
 /* Variaveis Globais */
 char tabuleiro[10][17], pecasc[10][17];
-int altura = 9, largura = 16, velocidade=60, perdeu = 0, pontuacao = 0, conectadas = 0;
+int altura = 9, largura = 16, velocidade=60, pontuacao = 0, conectadas;
 double co_angular = 0;
 char p; 
 
@@ -101,7 +101,7 @@ void menuMain();
 void exibeTabuleiro() {
     int i, j;
 
-    printf("Pontos: %d\nConectadas: %d\n\n", pontuacao, conectadas);
+    printf("Pontos: %d\n\n", pontuacao);
 
     for(i = 0; i < altura; i++) {
         for(j = 0; j < largura; j++) {
@@ -225,9 +225,16 @@ void explode() {
     }
 }
 
+// Para evitar segmentation fault na recursividade.
+int ehSeguro(int i, int j) {
+    if(i >= 0 && j >= 0 && i <= altura && j <= largura)
+        return 1;
+    return 0;
+}
+
 // Verifica as conexoes das pecas.
 void verifica(char peca, int i, int j) {
-    if(tabuleiro[i][j] == peca) {
+    if(tabuleiro[i][j] == peca && ehSeguro(i, j)) {
         pecasc[i][j] = '*';
         if(tabuleiro[i][j+1] == peca) {
             conectadas++;
@@ -252,7 +259,7 @@ void verifica(char peca, int i, int j) {
 manter as duas em uma unica gerava segmentation fault.
 */
 void verifica2(char peca, int i, int j) {
-    if(tabuleiro[i][j] == peca) {
+    if(tabuleiro[i][j] == peca && ehSeguro(i, j)) {
         pecasc[i][j] = '*';
         if(tabuleiro[i+1][j+1] == peca) {
             conectadas++;
@@ -261,6 +268,18 @@ void verifica2(char peca, int i, int j) {
         if(tabuleiro[i][j-1] == peca) {
             conectadas++;
             verifica2(peca, i, j-1);
+        }
+        if(tabuleiro[i+1][j] == peca) {
+            conectadas++;
+            verifica2(peca, i+1, j);
+        }
+        if(tabuleiro[i+1][j+2] == peca) {
+            conectadas++;
+            verifica2(peca, i+1, j+2);
+        }
+        if(tabuleiro[i+1][j-1] == peca) {
+            conectadas++;
+            verifica2(peca, i+1, j-1);
         }
     }
 }  
@@ -309,22 +328,6 @@ void atira() {
         pecasc[localy][localx] = '*';
     explode();
 
-}
-
-// PARA TESTE APENAS, REMOVER
-void exibeAsteriscos() {
-    int i, j;
-
-    limpaTela();
-    printf("Pontos: %d\nConectadas: %d\n\n", pontuacao, conectadas);
-
-    for(i = 0; i < altura; i++) {
-        for(j = 0; j < largura; j++) {
-            printf("%c", pecasc[i][j]);
-        }
-        printf("\n");
-    }
-    usleep(500000);
 }
 
 // Exibe as instrucoes do jogo.
@@ -382,7 +385,8 @@ void desceTabuleiro() {
             aux[i][j] = tabuleiro[i][j];
         }
     }
-
+    
+    // Comeca a copiar os elementos "por cima" do auxiliar.
     for(i = 1; i < altura-2; i++) {
         for(j = 1; j < largura-1; j++) {
             tabuleiro[i][j] = aux[i-1][j];
@@ -415,6 +419,7 @@ int pecaFrente() {
 // Tela exibida apos encerrar a partida
 void despedida() {
     limpaTela();
+    printf(BLUE "\t\tSUPER EXPLODE LETRAS\n\n" RESET);
     printf("Obrigado por jogar!!\n");
     printf("Sua pontuacao final foi de: %d pontos.\n", pontuacao);
 }
@@ -422,7 +427,7 @@ void despedida() {
 // Exibe inicialmente o tabuleiro e gerencia todas as funcoes de jogo 
 void iniciaJogo() {
     
-    int contatempo = 0, segundos = 0, tecla;
+    int contatempo = 0, segundos = 0, tecla, perdeu=0;
 
     time_t inicio;
     time(&inicio);
@@ -452,8 +457,7 @@ void iniciaJogo() {
                 calculaMira();
             } else if(tecla == 32) {
                 atira();
-            } else if(tecla == 102)
-                exibeAsteriscos();
+            } 
 
             exibeTabuleiro(); 
             usleep(10000);
@@ -484,10 +488,9 @@ void iniciaJogo() {
 void boasVindas() {
     limpaTela();
 
-    printf(BLUE "\n\n\t\tSUPER EXPLODE LETRAS\n\n" RESET);
+    printf(BLUE "\n\n\t\tS U P E R  E X P L O D E  L E T R A S\n\n" RESET);
 
-
-    printf("Pressione qualquer tecla para continuar.\n");
+    printf("\nPressione qualquer <Enter> para continuar.\n");
 
     getchar();    
 }
@@ -498,7 +501,6 @@ void menuMain() {
     
     int opcao;
 
-    boasVindas();
     limpaTela();
 
     printf("1 - Jogar\n");
@@ -534,5 +536,6 @@ int main() {
     srand(time(0));
     criachar();
 
+    boasVindas();
     menuMain();
 }
