@@ -88,14 +88,15 @@ int getch(void) {
 /* Variaveis Globais */
 char tabuleiro[10][17];
 char pecasc[10][17]; // matriz auxiliar para criar a explosao.
-int altura = 9, largura = 16, velocidade=60, pontuacao = 0, conectadas;
+int altura = 9, largura = 16, velocidade=60, pontuacao = 0, conectadas, perdeu = 1 ;
+int tempoDescida = 20, pontua = 4; // numero de pecas para explodir
 double co_angular = 0;
 char p; 
-FILE *replay;
+FILE *replay, *config;
 
-/* Para remover os warnings, devido ao fato da funcao ser chamada
-   antes de sua declaracao */
+/* Cabecalhos de funcoes para remover os warnings. */
 void menuMain();
+void despedida();
 
 
 // Exibe e adiciona cores ao tabuleiro.
@@ -137,8 +138,17 @@ void preencheTabuleiro() {
 }
 
 // Adiciona a peca aleatoria a base do tabuleiro.
-void adicionaPecaBase(){
-    tabuleiro[altura-2][largura/2] = p;
+void adicionaPecaBase(int repete){
+    perdeu = 0; // caso o ja se tenha jogado uma partida, reseta o perdeu
+    if(repete != 2)
+        tabuleiro[altura-2][largura/2] = p;
+    else if(repete == 2) {
+        if((fscanf(replay, "%c", &p)) != EOF) {
+            tabuleiro[altura-2][largura/2] = p;
+        } else {
+            perdeu = 1;
+        }
+    }
 }
 
 // Limpa o tabuleiro para, posteriormente, atualizar a mira.
@@ -184,6 +194,30 @@ void limpaTela() {
     system(CLEAR);
 }
 
+// Exibe o nome do jogo com as cores.
+void nomeJogo() {
+    printf("\n\n\t\t");
+    printf(RED "S" RESET);
+    printf(BLUE "U" RESET);
+    printf(YELLOW "P" RESET);
+    printf(GREEN "E" RESET);
+    printf(MAGENTA "R" RESET);
+    printf(CYAN " E" RESET);
+    printf(RED "X" RESET);
+    printf(BLUE "P" RESET);
+    printf(YELLOW "L" RESET);
+    printf(GREEN "O" RESET);
+    printf(MAGENTA"D" RESET);
+    printf(CYAN "E" RESET);
+    printf(RED " L" RESET);
+    printf(BLUE "E" RESET);
+    printf(YELLOW "T" RESET);
+    printf(GREEN "R" RESET);
+    printf(MAGENTA "A" RESET);
+    printf(CYAN "S" RESET);
+    printf("\n\n");
+}
+
 // Cria o caractere aleatorio da base do tabuleiro.
 void criachar() {
     p = 'A' + rand() % 5;
@@ -200,7 +234,7 @@ void explode() {
                 count++;
         }
     }
-    if(count >= 4) {
+    if(count >= pontua) {
         for(i = 1; i < altura-3; i++) {
             for(j = 1; j < largura-1; j++) {
                 if(pecasc[i][j] == '*')
@@ -224,6 +258,11 @@ void explode() {
 
         pontuacao += 10*count;
     }
+}
+
+// Salva a peca atirada no arquivo de texto
+void salvaPeca(char peca) {
+    fprintf(replay, "%c", peca);
 }
 
 // Para evitar segmentation fault na recursividade.
@@ -286,13 +325,20 @@ void verifica2(char peca, int i, int j) {
 }  
 
 // "Movimenta" o caractere pela mira ate o seu destino final.
-void atira() {
+void atira(int repete) {
     int i, j, flag = 0, localx, localy;
-    char anterior = p;
-
-    // Altera a letra da base do tabuleiro.
-    //criachar();
-    adicionaPecaBase();
+    char anterior;
+    
+    
+    /* Somente gera um char aleatorio se a as opcoes selecionadas
+    nao forem a 2 (que le o arquivo de replay).
+    */
+    anterior = p;
+    if(repete != 2) {
+        criachar();
+    }
+    
+    adicionaPecaBase(repete);
     calculaMira();
 
     for(i = altura-2; i >= 0; i--) {
@@ -327,12 +373,14 @@ void atira() {
     verifica2(anterior, localy, localx);
     explode();
 
+    if(repete == 1)
+        salvaPeca(anterior); // para salvar no arquivo
 }
 
 // Exibe as instrucoes do jogo.
 void instrucoes() {
     limpaTela();
-    printf(BLUE "\t\tSUPER EXPLODE LETRAS\n" RESET);
+    nomeJogo();
     printf("COMANDOS: \n");
     printf("\t Pressione a para mover a mira para a esquerda.\n");
     printf("\t Pressione d para mover a mira para a direita.\n");
@@ -347,23 +395,76 @@ void instrucoes() {
         menuMain();
 }
 
-// Funcao a ser implementada futuramente.
+// Tela para definicao das opcoes do usuario, que serao gravadas no arquivo de configuracoes.
+void configPecas() {
+    limpaTela();
+    
+    do {
+        limpaTela();
+        nomeJogo();
+        printf("Quantidade de pecas para pontuar (min 3 && max 10): ");
+        scanf("%d", &pontua);
+    } while(pontua < 3 || pontua > 10);
+    
+    do {
+        limpaTela();
+        nomeJogo();
+        printf("Tempo de descida do tabuleiro (min 10 && max 35): ");
+        scanf("%d", &tempoDescida);
+    } while(tempoDescida < 10 || tempoDescida > 35);
+
+
+    if((config = fopen("configuracoes.txt", "w")) == NULL) {
+        printf("Erro ao abrir o arquivo de configuracoes!");
+    } else {
+        fprintf(config, "%d %d", pontua, tempoDescida);
+        fclose(config);
+    }
+}
+
+/* Esta funcao eh chamada ao inicio de cada jogo para abrir o arquivo
+de texto gerado previamente para definir as configuracoes  da partida
+atual*/
+void verificaConfig() {
+    if((config = fopen("configuracoes.txt", "r")) == NULL)
+        printf("O arquivo de configuracoes nao foi criado ainda!");
+    else {
+        fscanf(config, "%d %d", &pontua, &tempoDescida);
+        fclose(config);
+    }
+}
+
+void ranqueado() {
+
+}
+
+// Implementa as configuracoes do jogo.
 void configuracoes() {
     limpaTela();
-    printf(BLUE "\t\tSUPER EXPLODE LETRAS\n" RESET);
-    printf("Funcao ainda nao implementada.\n\n");
-    printf("Aperte Enter para voltar ao Menu Principal...");
+    int opcao;
 
-    getch();
+    nomeJogo();
+    printf(GREEN "1. Pecas\n" RESET);
+    printf(BLUE "2. Ativar Modo Ranqueado\n" RESET);
+    printf(RED "3. Voltar\n" RESET);
+    printf(YELLOW "Opcao escolhida: " RESET);
+
+    scanf("%d", &opcao);
+
+    if(opcao == 1) 
+        configPecas();
+    else if(opcao == 2)
+        ranqueado();
 
     if(getch() == 10)
         menuMain();
 }
 
+
 // Funcao a ser implementada futuramente.
 void ranking() {
     limpaTela();
-    printf(BLUE "\t\tSUPER EXPLODE LETRAS\n" RESET);
+    nomeJogo();
     printf("Funcao ainda nao implementada.\n\n");
     printf("Aperte Enter para voltar ao Menu Principal...");
 
@@ -406,11 +507,11 @@ int temporizador(time_t inicio) {
     return diferenca;
 }
 
-// Verifica se ha peca em uma das tres posicoes horizontais na frente da mira.
+//  Verifica se ha peca em uma das tres posicoes horizontais na frente da mira.
 int pecaFrente() {
-    if(tabuleiro[altura-3][largura/2] != '-' && tabuleiro[altura-3][largura/2] != ' ' || 
-    tabuleiro[altura-3][largura/2-1] != ' ' && tabuleiro[altura-3][largura/2-1] != '-' ||
-    tabuleiro[altura-3][largura/2+1] != ' ' && tabuleiro[altura-3][largura/2+1] != '-')
+    if((tabuleiro[altura-3][largura/2] != '-' && tabuleiro[altura-3][largura/2] != ' ') || 
+    (tabuleiro[altura-3][largura/2-1] != ' ' && tabuleiro[altura-3][largura/2-1] != '-') ||
+    (tabuleiro[altura-3][largura/2+1] != ' ' && tabuleiro[altura-3][largura/2+1] != '-'))
         return 1;
     return 0;
 }
@@ -418,7 +519,9 @@ int pecaFrente() {
 // Tela exibida apos encerrar a partida
 void despedida() {
     limpaTela();
-    printf(BLUE "\t\tSUPER EXPLODE LETRAS\n\n" RESET);
+    if(replay != NULL)
+        fclose(replay);
+    nomeJogo();
     printf("Obrigado por jogar!!\n");
     printf("Sua pontuacao final foi de: %d pontos.\n\n", pontuacao);
 
@@ -426,12 +529,15 @@ void despedida() {
     if(getch() == 10) {
         menuMain();
     }
+
+    
 }
 
 // Exibe inicialmente o tabuleiro e gerencia todas as funcoes de jogo 
-void iniciaJogo() {
+void iniciaJogo(int repete) {
     
-    int contatempo = 0, segundos = 0, tecla, perdeu=0;
+    int contatempo = 0, tecla;
+    co_angular = 0; // tambem zera a mira, para centraliza-la
     pontuacao = 0; // caso o jogador queira jogar de novo, zera a pontuacao anterior.
 
     time_t inicio;
@@ -440,12 +546,12 @@ void iniciaJogo() {
 
     limpaTela();
     preencheTabuleiro();
-    adicionaPecaBase();
+    adicionaPecaBase(repete);
     calculaMira();
     exibeTabuleiro();
     
     do {
-        
+
         if(kbhit()) {
             limpaTela();
 
@@ -461,29 +567,27 @@ void iniciaJogo() {
                 co_angular -= 0.13;
                 calculaMira();
             } else if(tecla == 32) {
-                atira();
+                atira(repete);
+                
             } 
 
             exibeTabuleiro(); 
             usleep(velocidade*400);
+           
         }
-
-        // Desce a parede superior apos 20 segundos.
+        // Desce a parede superior.
         limpaTela();
         contatempo = temporizador(inicio);
-        if(contatempo == 10) {
+        if(contatempo == tempoDescida) {
             desceTabuleiro();
             time(&inicio);
-            segundos++;
         }
-        if(segundos > 5 || pecaFrente())
-            perdeu = 1;
-
         exibeTabuleiro();
-
         usleep(velocidade*400);
 
-
+        // Verifica se ha pecas na frente da letra da base para encerrar a partida.
+        if(pecaFrente())
+            perdeu = 1 ;
     } while(perdeu != 1);
     
     despedida();
@@ -493,25 +597,12 @@ void iniciaJogo() {
 void boasVindas() {
     limpaTela();
 
-    printf(BLUE "\n\n\t\tS U P E R  E X P L O D E  L E T R A S\n\n" RESET);
+    nomeJogo();
 
     printf("\nPressione qualquer <Enter> para continuar.\n");
 
     getch();    
 }
-
-
-// Percorre o tabuleiro para salva-lo no arquivo
-void salvaTabuleiro() {
-    int i, j;
-
-    for(i = 0; i < altura; i++) {
-        for(j = 0; j < largura; j++) {
-            fprintf(replay, "%c", tabuleiro[i][j]);
-        }
-    }
-}
-
 
 // Cria o arquivo .txt de replay para armazenar o estado do jogo
 void criarReplay() {
@@ -519,18 +610,27 @@ void criarReplay() {
     limpaTela();
     char filename[100];
 
-    printf("Informe o nome do arquivo a ser criado: (adicione .txt ao final) ");
+    printf("Informe o nome do arquivo a ser criado (adicione .txt ao final): ");
     scanf("%s", filename);
 
-    replay = fopen(filename, "w");
-    salvaTabuleiro();
-
-
+    if((replay = fopen(filename, "w")) == NULL) {
+        printf("Erro ao criar o arquivo de texto!");
+    }
+    iniciaJogo(1);
 }
 
 // Le o arquivo .txt para iniciar o jogo
 void usarReplay() {
+    limpaTela();
+    char filename[100];
 
+    printf("Informe o nome do arquivo a ser aberto (adicione .txt ao final): ");
+    scanf("%s", filename);
+
+    if((replay = fopen(filename, "r")) == NULL) {
+        printf("Erro ao abrir o arquivo de texto!");
+    }
+    iniciaJogo(2);
 }
 
 // Exibe as opcoes de jogo em relacao aos arquivos
@@ -550,7 +650,7 @@ void opcoesJogo() {
     else if(opcao == 2)
         usarReplay();
     else if(opcao == 3)
-        iniciaJogo();
+        iniciaJogo(3);
 
 }
 
@@ -566,13 +666,14 @@ void menuMain() {
     printf(GREEN "2 - Instrucoes\n" RESET);
     printf(RED "3 - Configuracoes\n" RESET);
     printf(BLUE "4 - Ranking\n" RESET);
-    printf(MAGENTA"5 - Sair\n\n" RESET);
+    printf(MAGENTA "5 - Sair\n\n" RESET);
     printf(CYAN "Informe o numero correspondente a opcao desejada: " RESET);
 
     scanf("%d", &opcao);
     
     switch(opcao) {
         case 1:
+            verificaConfig();
             opcoesJogo();
             break;
         case 2: 
