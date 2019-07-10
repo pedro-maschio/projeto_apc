@@ -88,15 +88,22 @@ int getch(void) {
 /* Variaveis Globais */
 char tabuleiro[10][17];
 char pecasc[10][17]; // matriz auxiliar para criar a explosao.
+char nickname[11];
 int altura = 9, largura = 16, velocidade=60, pontuacao = 0, conectadas, perdeu = 1 ;
-int tempoDescida = 20, pontua = 4; // numero de pecas para explodir
+int tempoDescida = 20, pontua = 4, ranq = 0; // numero de pecas para explodir
 double co_angular = 0;
 char p; 
-FILE *replay, *config;
+FILE *replay, *config, *arqRank;
+
+typedef struct {
+    char nick[11];
+    int score;
+} Player;
 
 /* Cabecalhos de funcoes para remover os warnings. */
 void menuMain();
 void despedida();
+void configuracoes();
 
 
 // Exibe e adiciona cores ao tabuleiro.
@@ -399,26 +406,41 @@ void instrucoes() {
 void configPecas() {
     limpaTela();
     
-    do {
-        limpaTela();
-        nomeJogo();
-        printf("Quantidade de pecas para pontuar (min 3 && max 10): ");
-        scanf("%d", &pontua);
-    } while(pontua < 3 || pontua > 10);
+    if(ranq != 1) {
+        do {
+            limpaTela();
+            nomeJogo();
+            printf("Quantidade de pecas para pontuar (min 3 && max 10): ");
+            scanf("%d", &pontua);
+        } while(pontua < 3 || pontua > 10);
     
-    do {
+        do {
+            limpaTela();
+            nomeJogo();
+            printf("Tempo de descida do tabuleiro (min 10 && max 35): ");
+            scanf("%d", &tempoDescida);
+        } while(tempoDescida < 10 || tempoDescida > 35);
+
+
+        if((config = fopen("configuracoes.txt", "w")) == NULL) {
+            printf("Erro ao abrir o arquivo de configuracoes!");
+        } else {
+            fprintf(config, "%d %d", pontua, tempoDescida);
+            fclose(config);
+        }
+        printf("\nPressione <Enter> para voltar.\n");
+        getchar();   
+        configuracoes();   
+    } 
+    else {
         limpaTela();
         nomeJogo();
-        printf("Tempo de descida do tabuleiro (min 10 && max 35): ");
-        scanf("%d", &tempoDescida);
-    } while(tempoDescida < 10 || tempoDescida > 35);
+        printf("Modo ranqueado ATIVADO. Utilizando configuracoes padrao:\n");
+        printf("-> 5 pecas conectadas para pontuar;\n");
+        printf("-> 15 segundos para o tabuleiro descer.\n"); 
 
-
-    if((config = fopen("configuracoes.txt", "w")) == NULL) {
-        printf("Erro ao abrir o arquivo de configuracoes!");
-    } else {
-        fprintf(config, "%d %d", pontua, tempoDescida);
-        fclose(config);
+        printf("\nPressione <Enter> para voltar.\n");
+        getchar();   
     }
 }
 
@@ -426,16 +448,107 @@ void configPecas() {
 de texto gerado previamente para definir as configuracoes  da partida
 atual*/
 void verificaConfig() {
-    if((config = fopen("configuracoes.txt", "r")) == NULL)
-        printf("O arquivo de configuracoes nao foi criado ainda!");
-    else {
+    if((config = fopen("configuracoes.txt", "r")) != NULL && ranq != 1) {
         fscanf(config, "%d %d", &pontua, &tempoDescida);
         fclose(config);
     }
 }
 
+// Altera e exibe as configuracoes que serao utilizadas na partida ranqueada ao jogador.
 void ranqueado() {
+    limpaTela();
+    nomeJogo();
+    printf("Modo ranqueado ATIVADO. Configuracoes de jogo atualizadas: \n");
+    printf("-> 5 pecas conectadas para pontuar;\n");
+    printf("-> 15 segundos para o tabuleiro descer.\n");
 
+    pontua = 5;
+    tempoDescida = 15;
+    ranq = 1; // partida ranqueada
+
+    printf("\nPressione <Enter> para voltar.");
+    
+    getchar();
+
+}
+
+// Solicita o nickname ao usuario e o informa que o modo ranqueado esta ativado.
+void verificaRanq() {
+    if(ranq) {
+        do {
+            limpaTela();
+            nomeJogo();
+            printf("MODO RANQUEADO ATIVADO\n\n");
+            printf("Informe o seu nickname: ");
+            scanf("%s", nickname);
+
+            if(strlen(nickname) < 1 || strlen(nickname) > 10) {
+                printf("O nickname deve ter mais que um caractere e menos que 10.");
+            }
+        } while(strlen(nickname) < 1 || strlen(nickname) > 10);
+    }
+}
+
+void ordena(Player player[]) {
+    int i, j;
+
+    for(i = 0; i < 10; i++) {
+        for(j = 0; j < 9; j++) {
+            if(player[j].score > player[j+1].score) {
+                int aux = player[j+1].score;
+                player[j+1].score = player[j].score;
+                player[j].score = aux;
+            }
+        }
+    }
+}
+
+void registerMatch() {
+    Player player;
+    Player matriz[10];
+    int i = 0;
+
+    if((arqRank = fopen("ranking.bin", "rb")) != NULL) {
+        while(fread(&player, sizeof(Player), 1, arqRank)) {
+            sprintf(matriz[i].nick, "%s", player.nick);
+            matriz[i].score = player.score;
+            i++;
+        }
+        ordena(matriz);
+        
+
+        fclose(arqRank);
+    } else {
+        arqRank = fopen("ranking.bin", "wb");
+        sprintf(player.nick, "%s", nickname);
+        player.score = pontuacao;
+        fwrite(&player, sizeof(Player), 1, arqRank);
+        fclose(arqRank);
+    }
+    
+}
+
+// Exibe o nome e a pontuacao dos 10 melhores players.
+void listarRanking() {
+    limpaTela();
+    nomeJogo();
+
+    Player player;
+    if((arqRank = fopen("ranking.bin", "rb")) == NULL) 
+        printf("Ainda nao foi gerado um arquivo de ranking!");
+    else {
+        printf("NOME\t\tPONTUACAO\n");
+        while(fread(&player, sizeof(Player), 1, arqRank)) { 
+            printf("%s\t\t", player.nick);
+            printf("%d", player.score);
+            printf("\n");
+        }
+        fclose(arqRank);
+    }
+    printf("\nPressione <Enter> para voltar ao Menu Principal.");
+    getchar();
+    if(getch())
+        menuMain();
 }
 
 // Implementa as configuracoes do jogo.
@@ -459,21 +572,6 @@ void configuracoes() {
     if(getch() == 10)
         menuMain();
 }
-
-
-// Funcao a ser implementada futuramente.
-void ranking() {
-    limpaTela();
-    nomeJogo();
-    printf("Funcao ainda nao implementada.\n\n");
-    printf("Aperte Enter para voltar ao Menu Principal...");
-
-    getch();
-
-    if(getch() == 10)
-        menuMain();
-}
-
 // Desce a parede superior do tabuleiro.
 void desceTabuleiro() {
     int i, j;
@@ -524,6 +622,9 @@ void despedida() {
     nomeJogo();
     printf("Obrigado por jogar!!\n");
     printf("Sua pontuacao final foi de: %d pontos.\n\n", pontuacao);
+
+    if(ranq)
+        registerMatch();
 
     printf("Aperte <Enter> para voltar ao menu principal.");
     if(getch() == 10) {
@@ -610,6 +711,7 @@ void criarReplay() {
     limpaTela();
     char filename[100];
 
+    nomeJogo();
     printf("Informe o nome do arquivo a ser criado (adicione .txt ao final): ");
     scanf("%s", filename);
 
@@ -624,13 +726,16 @@ void usarReplay() {
     limpaTela();
     char filename[100];
 
+    nomeJogo();
     printf("Informe o nome do arquivo a ser aberto (adicione .txt ao final): ");
     scanf("%s", filename);
 
     if((replay = fopen(filename, "r")) == NULL) {
-        printf("Erro ao abrir o arquivo de texto!");
+        printf("Erro ao abrir o arquivo de texto!\n");
+        menuMain();
+    } else {
+        iniciaJogo(2);
     }
-    iniciaJogo(2);
 }
 
 // Exibe as opcoes de jogo em relacao aos arquivos
@@ -638,6 +743,7 @@ void opcoesJogo() {
     limpaTela();
     int opcao;
 
+    nomeJogo();
     printf(GREEN "1. Criar arquivo de replay.\n" RESET);
     printf(BLUE "2. Utilizar arquivo de replay.\n" RESET);
     printf(RED "3. Jogar sem utilizar arquivo de replay.\n" RESET);
@@ -673,6 +779,7 @@ void menuMain() {
     
     switch(opcao) {
         case 1:
+            verificaRanq();
             verificaConfig();
             opcoesJogo();
             break;
@@ -683,7 +790,7 @@ void menuMain() {
             configuracoes();
             break;
         case 4:
-            ranking();
+            listarRanking();
             break;
         case 5:
             limpaTela();
