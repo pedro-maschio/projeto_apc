@@ -478,7 +478,7 @@ void verificaRanq() {
             limpaTela();
             nomeJogo();
             printf("MODO RANQUEADO ATIVADO\n\n");
-            printf("Informe o seu nickname: ");
+            printf("Informe o seu nickname (sem espacos):");
             scanf("%s", nickname);
 
             if(strlen(nickname) < 1 || strlen(nickname) > 10) {
@@ -574,7 +574,7 @@ void listarRanking() {
             if(strlen(player.nick) == 0 && player.score == 0) {
                 printf("\n");
             } else {
-                printf("%d\t\t", i);
+                printf("%dº\t\t", i);
                 printf("%s\t\t", player.nick);
                 printf("%d", player.score);
                 printf("\n");
