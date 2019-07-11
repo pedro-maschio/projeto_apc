@@ -172,7 +172,6 @@ void limpaTabuleiro() {
 
 // Calcula e adiciona a mira ao tabuleiro.
 void calculaMira() { 
-
     int j, y, flag = 0;
     double aux;
 
@@ -491,39 +490,70 @@ void verificaRanq() {
 
 void ordena(Player player[]) {
     int i, j;
+    char n[11];
 
     for(i = 0; i < 10; i++) {
         for(j = 0; j < 9; j++) {
-            if(player[j].score > player[j+1].score) {
+            if(player[j].score < player[j+1].score) {
                 int aux = player[j+1].score;
+                sprintf(n, "%s", player[j+1].nick);
+
                 player[j+1].score = player[j].score;
+                sprintf(player[j+1].nick, "%s", player[j].nick);
+
                 player[j].score = aux;
+                sprintf(player[j].nick, "%s", n);
             }
         }
     }
 }
 
+
+// Registra a pontuacao do jogador no ranking, mantendo-o ordenado.
 void registerMatch() {
     Player player;
-    Player matriz[10];
+    Player vector[11];
     int i = 0;
+    
+    // tira o lixo do vetor
+    for(i = 0; i < 10; i++) {
+        sprintf(vector[i].nick, "%s", "\0");
+        vector[i].score = 0;
+    } 
 
     if((arqRank = fopen("ranking.bin", "rb")) != NULL) {
+        i = 0;
+
         while(fread(&player, sizeof(Player), 1, arqRank)) {
-            sprintf(matriz[i].nick, "%s", player.nick);
-            matriz[i].score = player.score;
+            sprintf(vector[i].nick, "%s", player.nick);
+            vector[i].score = player.score;
             i++;
         }
-        ordena(matriz);
-        
-
         fclose(arqRank);
-    } else {
+        if(i < 10) {
+            sprintf(vector[i+1].nick, "%s", nickname);
+            vector[i+1].score = pontuacao;
+        } else {
+            sprintf(vector[9].nick, "%s", nickname);
+            vector[9].score = pontuacao;
+        }
+        ordena(vector);
         arqRank = fopen("ranking.bin", "wb");
+        i = 0;
+        while(i < 10) {
+            fwrite(&vector[i], sizeof(player), 1, arqRank);
+            i++;
+        }
+        fclose(arqRank);
+
+    } else if((arqRank = fopen("ranking.bin", "wb")) != NULL) {
+        // Cria o arquivo e adiciona o primeiro elemento ao ranking
         sprintf(player.nick, "%s", nickname);
         player.score = pontuacao;
         fwrite(&player, sizeof(Player), 1, arqRank);
         fclose(arqRank);
+    } else {
+        printf("Problema ao abrir ou ao criar o arquivo de ranking!");
     }
     
 }
@@ -532,16 +562,28 @@ void registerMatch() {
 void listarRanking() {
     limpaTela();
     nomeJogo();
+    int i = 1;
 
     Player player;
     if((arqRank = fopen("ranking.bin", "rb")) == NULL) 
-        printf("Ainda nao foi gerado um arquivo de ranking!");
+        printf("Ainda nao foi gerado um arquivo de ranking!\n");
     else {
-        printf("NOME\t\tPONTUACAO\n");
+        printf("COLOCACAO\tNOME\t\tPONTUACAO\n");
         while(fread(&player, sizeof(Player), 1, arqRank)) { 
-            printf("%s\t\t", player.nick);
-            printf("%d", player.score);
-            printf("\n");
+            
+            if(strlen(player.nick) == 0 && player.score == 0) {
+                printf("\n");
+            } else {
+                printf("%d\t\t", i);
+                printf("%s\t\t", player.nick);
+                printf("%d", player.score);
+                printf("\n");
+            }
+            i++;
+        }
+        while(i < 9) {
+            printf("\n\n");
+            i++;
         }
         fclose(arqRank);
     }
@@ -716,7 +758,11 @@ void criarReplay() {
     scanf("%s", filename);
 
     if((replay = fopen(filename, "w")) == NULL) {
-        printf("Erro ao criar o arquivo de texto!");
+        printf("Erro ao criar arquivo de replay!\n");
+
+        printf("Pressione <Enter> para voltar ao Menu Principal.");
+        getchar();
+        getchar();
     }
     iniciaJogo(1);
 }
@@ -731,7 +777,11 @@ void usarReplay() {
     scanf("%s", filename);
 
     if((replay = fopen(filename, "r")) == NULL) {
-        printf("Erro ao abrir o arquivo de texto!\n");
+        printf("Arquivo de replay inexistente!\n");
+
+        printf("Pressione <Enter> para voltar ao Menu Principal.");
+        getchar();
+        getchar();
         menuMain();
     } else {
         iniciaJogo(2);
