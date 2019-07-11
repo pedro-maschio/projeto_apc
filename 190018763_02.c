@@ -89,8 +89,8 @@ int getch(void) {
 char tabuleiro[10][17];
 char pecasc[10][17]; // matriz auxiliar para criar a explosao.
 char nickname[11];
-int altura = 9, largura = 16, velocidade=60, pontuacao = 0, conectadas, perdeu = 1 ;
-int tempoDescida = 20, pontua = 4, ranq = 0; // numero de pecas para explodir
+int altura = 9, largura = 16, velocidade=60, pontuacao = 0, conectadas, perdeu = 1;
+int tempoDescida = 20, pontua = 4, ranq = 0; 
 double co_angular = 0;
 char p; 
 FILE *replay, *config, *arqRank;
@@ -665,10 +665,12 @@ void despedida() {
     printf("Obrigado por jogar!!\n");
     printf("Sua pontuacao final foi de: %d pontos.\n\n", pontuacao);
 
-    if(ranq)
+    if(ranq && pontuacao != 0)
         registerMatch();
+    if(pontuacao == 0)
+        printf("Sentimos muito, mas eh necessario ter pontuacao >= 0 para figurar no ranking!\n");
 
-    printf("Aperte <Enter> para voltar ao menu principal.");
+    printf("\nAperte <Enter> para voltar ao menu principal.");
     if(getch() == 10) {
         menuMain();
     }
