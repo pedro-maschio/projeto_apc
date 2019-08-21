@@ -6,7 +6,7 @@
 #	Algoritmos e Programação de Computadores 	#
 #	1/2019										#
 #	Aluno(a): Pedro de Tôrres Maschio			#
-#	Matricula: 19/0018763						#
+#	Matricula:					#
 #	Turma: A									#
 #	Versão do compilador: C99					#
 #	Descricao: Um divertido jogo estilo Puzzle  #
