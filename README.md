@@ -1,2 +1,2 @@
 # projeto_apc
-A função usleep() depende da velocidade do processador. Por esta razão, algumas transições têm  divergido em velocidade em diferentes computadores.
+Jogo estilo Puzzle Bubble desenvolvido em C. Aplica conhecimentos de arquivos binários, arquivos de texto, registro (structs), programação estruturada, etc. Have a good fun!
